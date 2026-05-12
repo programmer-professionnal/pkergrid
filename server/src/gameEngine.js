@@ -275,6 +275,7 @@ function startNewBettingRound(room) {
     return
   }
 
+  game.lastRaiseIndex = firstActive
   game.currentPlayerIndex = firstActive
 }
 
