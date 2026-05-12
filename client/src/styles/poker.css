@@ -1057,23 +1057,23 @@ body {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.75);
+  background: rgba(0, 0, 0, 0.8);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 300;
-  backdrop-filter: blur(4px);
-  padding: 20px;
+  backdrop-filter: blur(6px);
+  padding: 16px;
 }
 
 .tutorial-modal {
   background: #1a1a2e;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 20px;
-  padding: 32px;
-  max-width: 560px;
+  padding: 28px 32px 24px;
+  max-width: 520px;
   width: 100%;
-  max-height: 85vh;
+  max-height: 88vh;
   overflow-y: auto;
   position: relative;
   color: #ddd;
@@ -1081,63 +1081,238 @@ body {
   line-height: 1.6;
 }
 
-.tutorial-modal h2 {
-  font-size: 24px;
-  color: #2ecc71;
-  margin-bottom: 20px;
+.tutorial-close {
+  position: absolute;
+  top: 10px;
+  right: 14px;
+  background: none;
+  border: none;
+  color: #666;
+  font-size: 20px;
+  cursor: pointer;
+  line-height: 1;
+  z-index: 1;
+}
+
+.tutorial-close:hover { color: #fff; }
+
+.tutorial-progress {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.tutorial-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.15);
+  transition: all 0.2s;
+}
+
+.tutorial-dot.active { background: #2ecc71; width: 24px; border-radius: 4px; }
+.tutorial-dot.done { background: rgba(46,204,113,0.4); }
+
+.tutorial-step-title {
+  font-size: 22px;
+  color: #fff;
   text-align: center;
+  margin-bottom: 16px;
 }
 
-.tutorial-modal section {
-  margin-bottom: 20px;
+.tutorial-step-body p {
+  color: #ccc;
 }
 
-.tutorial-modal h3 {
-  font-size: 16px;
+.tutorial-step-body strong {
   color: #f1c40f;
+}
+
+.tutorial-emojis {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  font-size: 40px;
+  margin-top: 18px;
+}
+
+.tutorial-list {
+  padding-left: 20px;
+  color: #ccc;
+  margin-top: 8px;
+}
+
+.tutorial-list li {
   margin-bottom: 8px;
 }
 
-.tutorial-modal p {
-  color: #bbb;
-}
-
-.tutorial-modal ol, .tutorial-modal ul {
-  padding-left: 20px;
-  color: #bbb;
-}
-
-.tutorial-modal li {
-  margin-bottom: 4px;
-}
-
-.tutorial-close {
-  position: absolute;
-  top: 12px;
-  right: 16px;
-  background: none;
-  border: none;
-  color: #888;
-  font-size: 22px;
-  cursor: pointer;
-  line-height: 1;
-}
-
-.tutorial-close:hover {
+.tutorial-list strong {
   color: #fff;
 }
 
-.tutorial-hint {
+.tutorial-highlight-box {
+  margin-top: 14px;
+  padding: 10px 14px;
+  background: rgba(46, 204, 113, 0.08);
+  border-left: 3px solid #2ecc71;
+  border-radius: 6px;
   font-size: 13px;
-  color: #888;
-  margin-bottom: 8px;
+  color: #bbb;
+  line-height: 1.5;
 }
 
-.tutorial-controls {
+.tutorial-actions-grid {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  margin-top: 12px;
 }
+
+.tutorial-act-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 12px;
+  background: rgba(255,255,255,0.03);
+  border-left: 3px solid #555;
+  border-radius: 6px;
+  font-size: 14px;
+  color: #bbb;
+}
+
+.tutorial-act-box strong { color: #fff; }
+
+.tutorial-act-key {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  height: 26px;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #fff;
+  flex-shrink: 0;
+  margin-top: 1px;
+  font-family: inherit;
+}
+
+.tut-green { color: #2ecc71; }
+
+.tutorial-hands-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 10px;
+}
+
+.tutorial-hand-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 10px;
+  background: rgba(255,255,255,0.03);
+  border-radius: 6px;
+  font-size: 13px;
+  color: #ccc;
+}
+
+.tutorial-hand-item strong { color: #fff; }
+
+.tut-rank {
+  font-weight: 800;
+  color: #f1c40f;
+  min-width: 20px;
+  font-size: 12px;
+}
+
+.tut-desc {
+  margin-left: auto;
+  color: #888;
+  font-size: 12px;
+}
+
+.tutorial-tips-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.tutorial-tip-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 10px;
+  background: rgba(255,255,255,0.03);
+  border-radius: 8px;
+  font-size: 14px;
+  color: #ccc;
+}
+
+.tutorial-tip-item strong { color: #fff; }
+
+.tut-tip-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.tutorial-tip-item kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 5px;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  font-family: inherit;
+  margin: 0 1px;
+}
+
+.tutorial-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 20px;
+  gap: 10px;
+}
+
+.tutorial-step-counter {
+  font-size: 12px;
+  color: #666;
+  font-weight: 600;
+}
+
+.tutorial-nav-btn {
+  padding: 10px 20px;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 8px;
+  background: rgba(255,255,255,0.06);
+  color: #ccc;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.tutorial-nav-btn:hover { background: rgba(255,255,255,0.12); color: #fff; }
+
+.tutorial-nav-btn.primary {
+  background: linear-gradient(135deg, #1a8a3f, #2ecc71);
+  border: none;
+  color: #fff;
+}
+
+.tutorial-nav-btn.primary:hover { background: linear-gradient(135deg, #219a4f, #3ddc84); }
 
 .tutorial-action {
   display: flex;
@@ -1416,10 +1591,11 @@ body {
     font-size: 14px;
     max-height: 90vh;
   }
-  .tutorial-modal h2 { font-size: 20px; }
-  .tutorial-modal h3 { font-size: 15px; }
-  .tutorial-hand-row { font-size: 12px; gap: 2px; }
-  .tutorial-hand-name { min-width: auto; }
+  .tutorial-hand-item { font-size: 12px; gap: 4px; }
+  .tutorial-step-title { font-size: 18px; }
+  .tutorial-act-box { font-size: 13px; }
+  .tutorial-highlight-box { font-size: 12px; }
+  .tutorial-nav-btn { padding: 8px 14px; font-size: 13px; }
 }
 
 /* RESPONSIVE - Small phones */
@@ -1508,5 +1684,7 @@ body {
   .waiting-sub strong { font-size: 20px; }
 
   .tutorial-modal { padding: 16px; font-size: 13px; }
-  .tutorial-modal h2 { font-size: 18px; }
+  .tutorial-step-title { font-size: 16px; }
+  .tutorial-hand-item { font-size: 11px; }
+  .tutorial-tip-item { font-size: 13px; }
 }

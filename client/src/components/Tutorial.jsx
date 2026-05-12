@@ -1,115 +1,201 @@
-const HANDS = [
-  { rank: 1, name: 'Escalera Real', desc: 'A♠ K♠ Q♠ J♠ 10♠ — la mejor mano, muy rara' },
-  { rank: 2, name: 'Escalera de Color', desc: '5 cartas seguidas del mismo palo' },
-  { rank: 3, name: 'Póker', desc: '4 cartas iguales (ej: 4 reinas)' },
-  { rank: 4, name: 'Full House', desc: '3 de una + 2 de otra (ej: 3 reyes + 2 sietes)' },
-  { rank: 5, name: 'Color', desc: '5 cartas del mismo palo (no seguidas)' },
-  { rank: 6, name: 'Escalera', desc: '5 cartas seguidas (distinto palo)' },
-  { rank: 7, name: 'Trío', desc: '3 cartas iguales' },
-  { rank: 8, name: 'Doble Par', desc: '2 pares distintos' },
-  { rank: 9, name: 'Par', desc: '2 cartas iguales' },
-  { rank: 10, name: 'Carta Alta', desc: 'si nadie tiene nada, gana la carta más alta' },
+import { useState } from 'react'
+
+const STEPS = [
+  {
+    title: '👋 Bienvenido a Pkergrid',
+    body: (
+      <div>
+        <p>Pkergrid es <strong>póker Texas Hold'em</strong> para jugar con amigos.</p>
+        <p style={{marginTop:12}}>El objetivo es simple: <strong>ganar todas las fichas</strong> de tus oponentes.</p>
+        <p style={{marginTop:12}}>Cada mano se reparten cartas, todos apuestan, y el que tiene la mejor combinación gana todo lo apostado (<strong>el bote</strong>).</p>
+        <div className="tutorial-emojis">
+          <span>🃏</span><span>💰</span><span>🏆</span>
+        </div>
+      </div>
+    ),
+  },
+  {
+    title: '🖥️ Tu pantalla de juego',
+    body: (
+      <div>
+        <p>Esto es lo que ves en la mesa:</p>
+        <ul className="tutorial-list">
+          <li><strong>Tus cartas</strong> — las 2 cartas que solo TÚ ves (en tu asiento). Son tuarma secreta.</li>
+          <li><strong>Tus fichas</strong> — tu dinero. Con esto apuestas.</li>
+          <li><strong>Cartas comunitarias</strong> — salen boca arriba en el centro. TODOS las usan.</li>
+          <li><strong>Bote</strong> — el dinero total apostado en esta mano.</li>
+          <li><strong>D</strong> = quien reparte. <strong>SB</strong> = ciega pequeña. <strong>BB</strong> = ciega grande.</li>
+        </ul>
+        <div className="tutorial-highlight-box">
+          💡 Las ciegas (SB y BB) son apuestas obligatorias para que siempre haya dinero en juego.
+        </div>
+      </div>
+    ),
+  },
+  {
+    title: '📋 Cómo avanza una mano',
+    body: (
+      <div>
+        <p>Una mano tiene <strong>5 fases</strong>. En cada fase hay una ronda de apuestas:</p>
+        <ol className="tutorial-list">
+          <li><strong>Pre-Flop</strong> — Recibes tus 2 cartas. Decides si juegas o te retiras.</li>
+          <li><strong>Flop</strong> — Se destapan 3 cartas en el centro. Nueva ronda.</li>
+          <li><strong>Turn</strong> — Se destapa 1 carta más. Otra ronda.</li>
+          <li><strong>River</strong> — Se destapa la última carta. Ronda final.</li>
+          <li><strong>Showdown</strong> — Todos muestran sus cartas. El mejor gana.</li>
+        </ol>
+        <div className="tutorial-highlight-box">
+          💡 Combina tus 2 cartas + las 5 comunitarias para formar la mejor mano de 5 cartas.
+        </div>
+      </div>
+    ),
+  },
+  {
+    title: '🔘 Tus botones (cuando es tu turno)',
+    body: (
+      <div>
+        <p>Cuando te toque jugar, verás estos botones. También puedes usar las teclas <kbd>1</kbd> a <kbd>4</kbd>:</p>
+
+        <div className="tutorial-actions-grid">
+          <div className="tutorial-act-box" style={{borderLeftColor:'#c0392b'}}>
+            <span className="tutorial-act-key">1</span>
+            <div><strong>Retirarse</strong> — te sales de esta mano. <span className="tut-green">No pierdes nada más.</span></div>
+          </div>
+
+          <div className="tutorial-act-box" style={{borderLeftColor:'#27ae60'}}>
+            <span className="tutorial-act-key">2</span>
+            <div>
+              <strong>Verificar</strong> — pasas sin apostar (solo si nadie subió antes).
+            </div>
+          </div>
+
+          <div className="tutorial-act-box" style={{borderLeftColor:'#2980b9'}}>
+            <span className="tutorial-act-key">2</span>
+            <div>
+              <strong>Igualar</strong> — pagas lo mismo que el otro para seguir jugando.
+            </div>
+          </div>
+
+          <div className="tutorial-act-box" style={{borderLeftColor:'#e67e22'}}>
+            <span className="tutorial-act-key">3</span>
+            <div>
+              <strong>Subir</strong> — aumentas la apuesta. Los demás deben pagar más o retirarse.
+            </div>
+          </div>
+
+          <div className="tutorial-act-box" style={{borderLeftColor:'#c0392b'}}>
+            <span className="tutorial-act-key">4</span>
+            <div>
+              <strong>All-in</strong> — apuestas TODAS tus fichas de golpe. ¡Riesgo total!
+            </div>
+          </div>
+        </div>
+      </div>
+    ),
+  },
+  {
+    title: '🏆 ¿Quién gana?',
+    body: (
+      <div>
+        <p>Gana quien tenga la <strong>mejor combinación de 5 cartas</strong> usando sus 2 cartas + las 5 comunitarias.</p>
+        <p style={{marginTop:8}}>De mejor a peor:</p>
+        <div className="tutorial-hands-grid">
+          <div className="tutorial-hand-item"><span className="tut-rank">1</span> Escalera Real <span className="tut-desc">A♠ K♠ Q♠ J♠ 10♠</span></div>
+          <div className="tutorial-hand-item"><span className="tut-rank">2</span> Escalera de Color <span className="tut-desc">mismo palo y seguidas</span></div>
+          <div className="tutorial-hand-item"><span className="tut-rank">3</span> Póker <span className="tut-desc">4 cartas iguales</span></div>
+          <div className="tutorial-hand-item"><span className="tut-rank">4</span> Full House <span className="tut-desc">3+2 cartas iguales</span></div>
+          <div className="tutorial-hand-item"><span className="tut-rank">5</span> Color <span className="tut-desc">5 del mismo palo</span></div>
+          <div className="tutorial-hand-item"><span className="tut-rank">6</span> Escalera <span className="tut-desc">5 seguidas</span></div>
+          <div className="tutorial-hand-item"><span className="tut-rank">7</span> Trío <span className="tut-desc">3 cartas iguales</span></div>
+          <div className="tutorial-hand-item"><span className="tut-rank">8</span> Doble Par <span className="tut-desc">2 pares</span></div>
+          <div className="tutorial-hand-item"><span className="tut-rank">9</span> Par <span className="tut-desc">2 cartas iguales</span></div>
+          <div className="tutorial-hand-item"><span className="tut-rank">10</span> Carta Alta <span className="tut-desc">la más alta gana</span></div>
+        </div>
+      </div>
+    ),
+  },
+  {
+    title: '🎯 Tips para empezar',
+    body: (
+      <div>
+        <p>Consejos simples para tus primeras partidas:</p>
+
+        <div className="tutorial-tips-list">
+          <div className="tutorial-tip-item">
+            <span className="tut-tip-icon">✅</span>
+            <div><strong>Juega solo manos buenas:</strong> Pareja de Ases (AA), Pareja de Reyes (KK), As+Rey (AK).</div>
+          </div>
+          <div className="tutorial-tip-item">
+            <span className="tut-tip-icon">❌</span>
+            <div><strong>Retírate si tus cartas son malas:</strong> 2-7, 3-8, 2-9. No vale la pena.</div>
+          </div>
+          <div className="tutorial-tip-item">
+            <span className="tut-tip-icon">⏱️</span>
+            <div><strong>Tienes 30 segundos</strong> para decidir. Si no haces nada, te retiras automáticamente.</div>
+          </div>
+          <div className="tutorial-tip-item">
+            <span className="tut-tip-icon">🔌</span>
+            <div><strong>Si te desconectas</strong>, tu mano se retira automáticamente para no retrasar el juego.</div>
+          </div>
+          <div className="tutorial-tip-item">
+            <span className="tut-tip-icon">📋</span>
+            <div><strong>Comparte el código</strong> de sala (arriba a la izquierda) para invitar amigos.</div>
+          </div>
+          <div className="tutorial-tip-item">
+            <span className="tut-tip-icon">🎮</span>
+            <div><strong>Atajos de teclado:</strong> <kbd>1</kbd> Retirarse · <kbd>2</kbd> Verificar/Igualar · <kbd>3</kbd> Subir · <kbd>4</kbd> All-in</div>
+          </div>
+        </div>
+
+        <div className="tutorial-highlight-box">
+          🎉 ¡Ya sabes lo básico! Recuerda: la práctica hace al maestro. ¡Diviértete!
+        </div>
+      </div>
+    ),
+  },
 ]
 
 export default function Tutorial({ onClose }) {
+  const [step, setStep] = useState(0)
+  const total = STEPS.length
+  const current = STEPS[step]
+
   return (
     <div className="tutorial-overlay" onClick={onClose}>
       <div className="tutorial-modal" onClick={e => e.stopPropagation()}>
         <button className="tutorial-close" onClick={onClose}>✕</button>
 
-        <h2>🃏 Pkergrid — Cómo jugar</h2>
+        <div className="tutorial-progress">
+          {STEPS.map((_, i) => (
+            <div key={i} className={`tutorial-dot ${i === step ? 'active' : i < step ? 'done' : ''}`} />
+          ))}
+        </div>
 
-        {/* ===== 1. EL OBJETIVO ===== */}
-        <section>
-          <h3>🎯 El objetivo</h3>
-          <p>
-            Gana todas las fichas de tus rivales. Cada mano se reparten cartas y todos apuestan.
-            El que tenga la mejor combinación de <strong>5 cartas</strong> gana todo lo apostado (<strong>el bote</strong>).
-          </p>
-        </section>
+        <h2 className="tutorial-step-title">{current.title}</h2>
 
-        {/* ===== 2. LA PANTALLA ===== */}
-        <section>
-          <h3>🖥️ La pantalla de juego</h3>
-          <ul>
-            <li><strong>Tus cartas</strong> — las 2 cartas que solo tú ves (abajo, en tu asiento).</li>
-            <li><strong>Cartas comunitarias</strong> — en el centro, las comparten todos. Salen en 3 fases: Flop (3), Turn (1), River (1).</li>
-            <li><strong>Tus fichas</strong> — tu dinero. Apuestas con ellas.</li>
-            <li><strong>Bote</strong> — total de fichas apostadas en esta mano.</li>
-            <li><strong>D, SB, BB</strong> — quién reparte (D) y quién paga las ciegas (SB=pequeña, BB=grande).</li>
-          </ul>
-        </section>
+        <div className="tutorial-step-body">
+          {current.body}
+        </div>
 
-        {/* ===== 3. TUS BOTONES ===== */}
-        <section>
-          <h3>🔘 Tus botones (cuando es tu turno)</h3>
-          <div className="tutorial-controls">
-            <div className="tutorial-action">
-              <span className="tutorial-badge" style={{background:'#c0392b'}}>1</span>
-              <div><strong>Retirarse</strong> — te sales de esta mano. Pierdes lo apostado pero sigues jugando la siguiente.</div>
-            </div>
-            <div className="tutorial-action">
-              <span className="tutorial-badge" style={{background:'#27ae60'}}>2</span>
-              <div><strong>Verificar</strong> — pasas sin apostar (solo si nadie ha subido antes).</div>
-            </div>
-            <div className="tutorial-action">
-              <span className="tutorial-badge" style={{background:'#2980b9'}}>2</span>
-              <div><strong>Igualar</strong> — igualas la apuesta de otro para seguir en la mano.</div>
-            </div>
-            <div className="tutorial-action">
-              <span className="tutorial-badge" style={{background:'#e67e22'}}>3</span>
-              <div><strong>Subir</strong> — aumentas la apuesta. Los demás deben igualar o retirarse.</div>
-            </div>
-            <div className="tutorial-action">
-              <span className="tutorial-badge" style={{background:'#c0392b'}}>4</span>
-              <div><strong>All-in</strong> — apuestas TODAS tus fichas de golpe.</div>
-            </div>
-          </div>
-        </section>
+        <div className="tutorial-nav">
+          {step > 0 ? (
+            <button className="tutorial-nav-btn" onClick={() => setStep(step - 1)}>
+              ← Anterior
+            </button>
+          ) : <div />}
 
-        {/* ===== 4. CÓMO SE JUEGA UNA MANO ===== */}
-        <section>
-          <h3>📋 Paso a paso</h3>
-          <ol>
-            <li>A cada uno le dan <strong>2 cartas</strong> (solo tú ves las tuyas).</li>
-            <li><strong>Apuestas Pre-Flop</strong> — miras tus cartas y decides si juegas o te retiras.</li>
-            <li>Se destapan <strong>3 cartas comunitarias</strong> en el centro (Flop). Otra ronda de apuestas.</li>
-            <li>Se destapa <strong>1 carta más</strong> (Turn). Otra ronda.</li>
-            <li>Se destapa <strong>la última carta</strong> (River). Última ronda.</li>
-            <li><strong>Showdown</strong> — todos muestran sus cartas. Gana la mejor combinación de 5.</li>
-          </ol>
-        </section>
+          <span className="tutorial-step-counter">{step + 1} / {total}</span>
 
-        {/* ===== 5. RANKINGS ===== */}
-        <section>
-          <h3>🏆 Manos ganadoras (de mejor a peor)</h3>
-          <p className="tutorial-hint">
-            Combina tus 2 cartas + las 5 comunitarias para formar la mejor mano de 5 cartas.
-          </p>
-          <div className="tutorial-hands">
-            {HANDS.map(h => (
-              <div key={h.name} className="tutorial-hand-row">
-                <span className="tutorial-hand-rank">#{h.rank}</span>
-                <span className="tutorial-hand-name">{h.name}</span>
-                <span className="tutorial-hand-desc">{h.desc}</span>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* ===== 6. TIPS ===== */}
-        <section>
-          <h3>💡 Consejos</h3>
-          <ul>
-            <li><strong>No juegues todas las manos</strong> — si tus 2 cartas son malas (ej: 2 y 7), retírate.</li>
-            <li><strong>Buenas manos para jugar</strong> — pares altos (AA, KK, QQ), AK, AQ.</li>
-            <li>Tienes <strong>30 segundos</strong> para decidir, o te retiras automáticamente.</li>
-            <li>Las <strong>ciegas suben cada 5 manos</strong> para que el juego no se alargue.</li>
-            <li>Comparte el <strong>código de sala</strong> (arriba a la izquierda) para que se unan tus amigos.</li>
-          </ul>
-        </section>
-
-        <button className="tutorial-start-btn" onClick={onClose}>¡Entendido! Empezar a jugar</button>
+          {step < total - 1 ? (
+            <button className="tutorial-nav-btn primary" onClick={() => setStep(step + 1)}>
+              Siguiente →
+            </button>
+          ) : (
+            <button className="tutorial-nav-btn primary" onClick={onClose}>
+              ✓ ¡Entendido!
+            </button>
+          )}
+        </div>
       </div>
     </div>
   )

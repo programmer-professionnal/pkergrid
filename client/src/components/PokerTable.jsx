@@ -28,7 +28,9 @@ export default function PokerTable({ room, emit, setCallbacks, connected, onLeav
   const handCountRef = useRef(0)
   const prevPhaseRef = useRef(null)
   const [lastAction, setLastAction] = useState(null)
-  const [showTutorial, setShowTutorial] = useState(false)
+  const [showTutorial, setShowTutorial] = useState(
+    !sessionStorage.getItem('pkergrid_tutorial_done')
+  )
 
   const onGameState = useCallback((state) => {
     setGameState(state)
@@ -345,7 +347,7 @@ export default function PokerTable({ room, emit, setCallbacks, connected, onLeav
         )}
       </div>
 
-      {showTutorial && <Tutorial onClose={() => setShowTutorial(false)} />}
+      {showTutorial && <Tutorial onClose={() => { setShowTutorial(false); sessionStorage.setItem('pkergrid_tutorial_done', '1') }} />}
 
       <Chat
         messages={chatMessages}
