@@ -1,7 +1,5 @@
 import Card from './Card.jsx'
 
-const SUIT_SYMBOLS = { h: '♥', d: '♦', c: '♣', s: '♠' }
-
 export default function PlayerSeat({ player, isCurrent, isDealer, isSmallBlind, isBigBlind, isMe, showCards, handName }) {
   return (
     <div className={`seat ${isCurrent ? 'seat-current' : ''} ${player.folded ? 'seat-folded' : ''} ${player.eliminated ? 'seat-eliminated' : ''}`}>
