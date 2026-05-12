@@ -2,8 +2,9 @@ import { useEffect, useRef, useCallback } from 'react'
 import { io } from 'socket.io-client'
 import { SERVER_URL } from '../config.js'
 
-export default function useSocket({ onGameState, onRoomUpdate, onChatMessage, onPlayerDisconnected }) {
+export default function useSocket() {
   const socketRef = useRef(null)
+  const callbacksRef = useRef({})
 
   useEffect(() => {
     const socket = io(SERVER_URL, {
@@ -26,19 +27,19 @@ export default function useSocket({ onGameState, onRoomUpdate, onChatMessage, on
     })
 
     socket.on('game_state', (state) => {
-      if (onGameState) onGameState(state)
+      callbacksRef.current.onGameState?.(state)
     })
 
     socket.on('room_update', (data) => {
-      if (onRoomUpdate) onRoomUpdate(data)
+      callbacksRef.current.onRoomUpdate?.(data)
     })
 
     socket.on('chat_message', (data) => {
-      if (onChatMessage) onChatMessage(data)
+      callbacksRef.current.onChatMessage?.(data)
     })
 
     socket.on('player_disconnected', (data) => {
-      if (onPlayerDisconnected) onPlayerDisconnected(data)
+      callbacksRef.current.onPlayerDisconnected?.(data)
     })
 
     socket.on('ping_server', () => {
@@ -59,11 +60,15 @@ export default function useSocket({ onGameState, onRoomUpdate, onChatMessage, on
     }
   }, [])
 
+  const setCallbacks = useCallback((callbacks) => {
+    callbacksRef.current = callbacks
+  }, [])
+
   const emit = useCallback((event, data, callback) => {
     if (socketRef.current) {
       socketRef.current.emit(event, data, callback)
     }
   }, [])
 
-  return { emit, socket: socketRef.current }
+  return { emit, setCallbacks }
 }

@@ -1,12 +1,12 @@
-import { useState, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Card from './Card.jsx'
 import PlayerSeat from './PlayerSeat.jsx'
 import ActionButtons from './ActionButtons.jsx'
 import BetSlider from './BetSlider.jsx'
 import Chat from './Chat.jsx'
 
-export default function PokerTable({ room, onLeave }) {
-  const { playerId, roomCode, name, emit } = room
+export default function PokerTable({ room, emit, setCallbacks, onLeave }) {
+  const { playerId, roomCode, name } = room
   const [gameState, setGameState] = useState(null)
   const [players, setPlayers] = useState(room.players)
   const [showSlider, setShowSlider] = useState(false)
@@ -28,18 +28,15 @@ export default function PokerTable({ room, onLeave }) {
 
   const onPlayerDisconnected = useCallback(() => {}, [])
 
-  emit.onGameState = onGameState
-  emit.onRoomUpdate = onRoomUpdate
-  emit.onChatMessage = onChatMessage
-  emit.onPlayerDisconnected = onPlayerDisconnected
+  useEffect(() => {
+    setCallbacks({ onGameState, onRoomUpdate, onChatMessage, onPlayerDisconnected })
+  }, [setCallbacks, onGameState, onRoomUpdate, onChatMessage, onPlayerDisconnected])
 
   const roomPhase = gameState?.phase || 'waiting'
 
   function handleStart() {
     emit('start_game', {}, (response) => {
-      if (!response.success) {
-        alert(response.error)
-      }
+      if (!response.success) alert(response.error)
     })
   }
 
@@ -49,9 +46,7 @@ export default function PokerTable({ room, onLeave }) {
       return
     }
     emit('player_action', { action, amount }, (response) => {
-      if (!response.success) {
-        alert(response.error)
-      }
+      if (!response.success) alert(response.error)
     })
   }
 
@@ -70,10 +65,6 @@ export default function PokerTable({ room, onLeave }) {
     emit('send_message', { message: text }, () => {})
   }
 
-  function handleLeave() {
-    onLeave()
-  }
-
   const me = gameState
     ? gameState.players.find(p => p.id === playerId)
     : players.find(p => p.id === playerId)
@@ -81,7 +72,6 @@ export default function PokerTable({ room, onLeave }) {
   const visiblePlayers = gameState?.players || []
   const communityCards = gameState?.communityCards || []
   const isHost = players.find(p => p.id === playerId)?.isHost
-  const myCards = gameState?.myCards || []
 
   const phaseNames = {
     waiting: 'Esperando jugadores...',
@@ -111,7 +101,7 @@ export default function PokerTable({ room, onLeave }) {
               Iniciar Partida
             </button>
           )}
-          <button className="btn btn-secondary btn-sm" onClick={handleLeave}>
+          <button className="btn btn-secondary btn-sm" onClick={onLeave}>
             Salir
           </button>
         </div>
@@ -139,12 +129,9 @@ export default function PokerTable({ room, onLeave }) {
           {communityCards.length === 0 && roomPhase === 'waiting' && (
             <div className="table-waiting">Esperando que el anfitrión inicie la partida...</div>
           )}
-          {communityCards.length > 0 && communityCards.map((card, i) => (
+          {communityCards.map((card, i) => (
             <Card key={i} card={card} />
           ))}
-          {communityCards.length === 0 && roomPhase !== 'waiting' && (
-            <div className="table-waiting-placeholder">Esperando cartas comunitarias</div>
-          )}
         </div>
 
         {roomPhase === 'showdown' && gameState?.lastHand && (

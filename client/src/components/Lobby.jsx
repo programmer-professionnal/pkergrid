@@ -1,19 +1,11 @@
 import { useState } from 'react'
-import useSocket from '../hooks/useSocket.js'
 
-export default function Lobby({ onJoin }) {
+export default function Lobby({ emit, onJoin }) {
   const [name, setName] = useState('')
   const [roomCode, setRoomCode] = useState('')
   const [error, setError] = useState('')
   const [creating, setCreating] = useState(false)
   const [joining, setJoining] = useState(false)
-
-  const { emit } = useSocket({
-    onGameState: () => {},
-    onRoomUpdate: () => {},
-    onChatMessage: () => {},
-    onPlayerDisconnected: () => {},
-  })
 
   function handleCreate() {
     if (!name.trim()) {
@@ -31,7 +23,6 @@ export default function Lobby({ onJoin }) {
           roomCode: response.roomCode,
           players: response.players,
           name: name.trim(),
-          emit,
         })
       } else {
         setError(response.error || 'Error al crear la sala')
@@ -59,7 +50,6 @@ export default function Lobby({ onJoin }) {
           roomCode: response.roomCode,
           players: response.players,
           name: name.trim(),
-          emit,
         })
       } else {
         setError(response.error || 'Error al unirse')
