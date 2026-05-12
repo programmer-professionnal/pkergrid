@@ -1,15 +1,18 @@
 import Card from './Card.jsx'
 
-export default function PlayerSeat({ player, isCurrent, isDealer, position }) {
-  const positionClass = `seat-pos-${position}`
-  const currentClass = isCurrent ? 'seat-current' : ''
-  const foldedClass = player.folded ? 'seat-folded' : ''
-
+export default function PlayerSeat({ player, isCurrent, isDealer, isSmallBlind, isBigBlind, isMe }) {
   return (
-    <div className={`seat ${positionClass} ${currentClass} ${foldedClass}`}>
+    <div className={`seat ${isCurrent ? 'seat-current' : ''} ${player.folded ? 'seat-folded' : ''}`}>
       {isDealer && <div className="seat-dealer">D</div>}
-      <div className="seat-name">{player.name}</div>
-      <div className="seat-chips">{player.chips} fichas</div>
+      {isSmallBlind && <div className="seat-blind sb">SB</div>}
+      {isBigBlind && <div className="seat-blind bb">BB</div>}
+      <div className="seat-name">
+        {player.name}
+        {isMe && <span className="seat-you"> (tú)</span>}
+      </div>
+      <div className="seat-chips">
+        <span className="chip-icon">●</span> {player.chips}
+      </div>
       <div className="seat-cards">
         {player.cards.map((card, i) => (
           <Card key={i} card={card} hidden={false} small />
@@ -21,7 +24,7 @@ export default function PlayerSeat({ player, isCurrent, isDealer, position }) {
       {player.bet > 0 && (
         <div className="seat-bet">${player.bet}</div>
       )}
-      {player.folded && <div className="seat-status">FOLD</div>}
+      {player.folded && <div className="seat-status folded">RETIRADO</div>}
       {player.allIn && <div className="seat-status allin">ALL IN</div>}
       {isCurrent && <div className="seat-indicator">▼</div>}
     </div>

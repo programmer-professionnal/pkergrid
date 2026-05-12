@@ -1,8 +1,8 @@
 import { createDeck, shuffle, deal } from './deck.js'
 import { determineWinner } from './handEvaluator.js'
 
-const SMALL_BLIND = 10
-const BIG_BLIND = 20
+export const SMALL_BLIND = 10
+export const BIG_BLIND = 20
 const MIN_PLAYERS = 2
 
 export function canStartGame(room) {
@@ -13,22 +13,23 @@ export function startGame(room) {
   const players = room.players.filter(p => p.chips > 0)
   if (players.length < MIN_PLAYERS) return false
 
+  const nextDealer = room.game
+    ? (room.game.dealerIndex + 1) % players.length
+    : 0
+
   const game = {
     deck: [],
     communityCards: [],
     pot: 0,
     sidePots: [],
     currentPlayerIndex: 0,
-    dealerIndex: room.game ? (room.game.dealerIndex + 1) % players.length : 0,
+    dealerIndex: nextDealer,
     phase: 'preflop',
     minRaise: BIG_BLIND,
     currentBet: 0,
     lastRaiseIndex: -1,
     actionCount: 0,
     players,
-    dealerIndex: room.game
-      ? (room.game.dealerIndex + 1) % players.length
-      : 0,
   }
 
   const smallBlindIndex = (game.dealerIndex + 1) % players.length
@@ -322,6 +323,8 @@ export function getPublicGameState(room, playerId) {
       currentBet: 0,
       dealerIndex: -1,
       lastHand: room.lastHand,
+      smallBlind: SMALL_BLIND,
+      bigBlind: BIG_BLIND,
     }
   }
 
@@ -344,9 +347,7 @@ export function getPublicGameState(room, playerId) {
   return {
     phase: room.phase,
     players,
-    communityCards: room.phase === 'showdown'
-      ? game.communityCards
-      : game.communityCards,
+    communityCards: game.communityCards,
     pot: game.pot,
     currentPlayerIndex: game.currentPlayerIndex,
     currentPlayerId: game.players[game.currentPlayerIndex]?.id,
@@ -355,5 +356,7 @@ export function getPublicGameState(room, playerId) {
     dealerIndex: game.dealerIndex,
     myCards,
     lastHand: room.lastHand,
+    smallBlind: SMALL_BLIND,
+    bigBlind: BIG_BLIND,
   }
 }
