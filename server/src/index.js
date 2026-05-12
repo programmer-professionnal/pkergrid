@@ -85,7 +85,7 @@ io.on('connection', (socket) => {
 
     callback({
       success: true,
-      roomCode: room.code,
+      roomCode: result.room.code,
       playerId: id,
       players: result.room.players.map(p => ({
         id: p.id, name: p.name, chips: p.chips, isHost: p.id === result.room.hostId,
