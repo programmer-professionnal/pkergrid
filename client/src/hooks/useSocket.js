@@ -1,10 +1,11 @@
-import { useEffect, useRef, useCallback } from 'react'
+import { useEffect, useRef, useCallback, useState } from 'react'
 import { io } from 'socket.io-client'
 import { SERVER_URL } from '../config.js'
 
 export default function useSocket() {
   const socketRef = useRef(null)
   const callbacksRef = useRef({})
+  const [connected, setConnected] = useState(false)
 
   useEffect(() => {
     const socket = io(SERVER_URL, {
@@ -15,15 +16,15 @@ export default function useSocket() {
     })
 
     socket.on('connect', () => {
-      console.log('Conectado al servidor')
+      setConnected(true)
     })
 
     socket.on('disconnect', () => {
-      console.log('Desconectado del servidor')
+      setConnected(false)
     })
 
-    socket.on('connect_error', (err) => {
-      console.log('Error de conexión:', err.message)
+    socket.on('connect_error', () => {
+      setConnected(false)
     })
 
     socket.on('game_state', (state) => {
@@ -70,5 +71,5 @@ export default function useSocket() {
     }
   }, [])
 
-  return { emit, setCallbacks }
+  return { emit, setCallbacks, connected }
 }

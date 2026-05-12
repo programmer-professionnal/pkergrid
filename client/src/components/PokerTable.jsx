@@ -14,7 +14,7 @@ const BLIND_LEVELS = [
   { small: 100, big: 200 },
 ]
 
-export default function PokerTable({ room, emit, setCallbacks, onLeave }) {
+export default function PokerTable({ room, emit, setCallbacks, connected, onLeave }) {
   const { playerId, roomCode, name } = room
   const [gameState, setGameState] = useState(null)
   const [players, setPlayers] = useState(room.players)
@@ -25,19 +25,22 @@ export default function PokerTable({ room, emit, setCallbacks, onLeave }) {
   const [blindLevel, setBlindLevel] = useState(0)
   const timerRef = useRef(null)
   const handCountRef = useRef(0)
+  const [lastAction, setLastAction] = useState(null)
 
   const onGameState = useCallback((state) => {
     setGameState(state)
     if (state.players) setPlayers(state.players)
 
-    if (state.currentPlayerId === playerId && state.phase !== 'showdown' && state.phase !== 'waiting') {
+    if (state.currentPlayerId === playerId && state.phase !== 'showdown' && state.phase !== 'waiting' && state.phase !== 'game_over') {
       setTimer(TURN_TIMER)
       if (timerRef.current) clearInterval(timerRef.current)
       timerRef.current = setInterval(() => {
         setTimer(prev => {
           if (prev <= 1) {
             clearInterval(timerRef.current)
-            emit('player_action', { action: 'fold' }, () => {})
+            emit('player_action', { action: 'fold' }, (r) => {
+              if (r && r.error) setLastAction({ type: 'error', text: r.error })
+            })
             return 0
           }
           return prev - 1
@@ -81,25 +84,28 @@ export default function PokerTable({ room, emit, setCallbacks, onLeave }) {
   const roomPhase = gameState?.phase || 'waiting'
   const blinds = BLIND_LEVELS[blindLevel]
 
-  function handleStart() {
-    emit('start_game', {}, (response) => {
-      if (!response.success) alert(response.error)
-    })
-  }
-
   function handleAction(action, amount) {
     if (action === 'raise' && !amount) {
       setShowSlider(true)
       return
     }
+    setLastAction(null)
     emit('player_action', { action, amount }, (response) => {
-      if (!response.success) alert(response.error)
+      if (response && !response.success) {
+        setLastAction({ type: 'error', text: response.error })
+      }
+    })
+  }
+
+  function handleStart() {
+    emit('start_game', {}, (response) => {
+      if (response && !response.success) alert(response.error)
     })
   }
 
   function handleSliderConfirm(amount) {
     setShowSlider(false)
-    emit('player_action', { action: 'raise', amount }, () => {})
+    handleAction('raise', amount)
   }
 
   function handleCopyCode() {
@@ -112,20 +118,14 @@ export default function PokerTable({ room, emit, setCallbacks, onLeave }) {
     emit('send_message', { message: text }, () => {})
   }
 
-  function handleNewGame() {
-    emit('start_game', {}, (response) => {
-      if (!response.success) alert(response.error)
-    })
-  }
-
   const me = gameState
     ? gameState.players.find(p => p.id === playerId)
     : players.find(p => p.id === playerId)
 
   const visiblePlayers = gameState?.players || []
   const communityCards = gameState?.communityCards || []
-  const isHost = players.find(p => p.id === playerId)?.isHost
   const currentPlayerId = gameState?.currentPlayerId
+  const isHost = players.find(p => p.id === playerId)?.isHost
 
   const phaseNames = {
     waiting: 'Esperando jugadores...',
@@ -137,6 +137,14 @@ export default function PokerTable({ room, emit, setCallbacks, onLeave }) {
     game_over: 'Juego terminado',
   }
 
+  const facingBet = me && gameState ? Math.max(0, gameState.currentBet - me.bet) : 0
+
+  if (timer !== null && timer <= 5) {
+    document.documentElement.style.setProperty('--timer-urgent', '#e74c3c')
+  } else {
+    document.documentElement.style.setProperty('--timer-urgent', '#2ecc71')
+  }
+
   return (
     <div className="table-container">
       <div className="table-topbar">
@@ -146,7 +154,11 @@ export default function PokerTable({ room, emit, setCallbacks, onLeave }) {
           </span>
           {copyFeedback && <span className="copy-feedback">¡Copiado!</span>}
           <span className="topbar-players-count">
-            {visiblePlayers.length} jugador{visiblePlayers.length !== 1 ? 'es' : ''}
+            {players.filter(p => p.chips > 0 || !gameState).length}/{players.length}
+          </span>
+          <span className={`topbar-conn ${connected ? 'conn-on' : 'conn-off'}`}>
+            <span className="conn-dot-sm" />
+            {connected ? 'Online' : 'Offline'}
           </span>
         </div>
         <div className="topbar-center">
@@ -159,7 +171,7 @@ export default function PokerTable({ room, emit, setCallbacks, onLeave }) {
             </button>
           )}
           {roomPhase === 'game_over' && isHost && (
-            <button className="btn btn-primary btn-sm" onClick={handleNewGame}>
+            <button className="btn btn-primary btn-sm" onClick={handleStart}>
               Nueva Partida
             </button>
           )}
@@ -172,18 +184,22 @@ export default function PokerTable({ room, emit, setCallbacks, onLeave }) {
       <div className="table-felt">
         <div className="table-phase">
           <span>{phaseNames[roomPhase] || roomPhase}</span>
-          {gameState && gameState.phase !== 'waiting' && (
+          {gameState && gameState.phase !== 'waiting' && gameState.phase !== 'game_over' && (
             <>
               <span className="table-pot">Bote: ${gameState.pot}</span>
               <span className="table-blinds">SB ${blinds.small} / BB ${blinds.big}</span>
+              {facingBet > 0 && me && !me.folded && !me.allIn && roomPhase !== 'showdown' && (
+                <span className="table-to-call">Para igualar: ${facingBet}</span>
+              )}
             </>
           )}
-          {currentPlayerId && currentPlayerId !== playerId && roomPhase !== 'waiting' && roomPhase !== 'showdown' && roomPhase !== 'game_over' && (
-            <span className="table-waiting-turn">
-              Esperando a {visiblePlayers.find(p => p.id === currentPlayerId)?.name || 'otro jugador'}...
-            </span>
-          )}
         </div>
+
+        {currentPlayerId && currentPlayerId !== playerId && roomPhase !== 'waiting' && roomPhase !== 'showdown' && roomPhase !== 'game_over' && (
+          <div className="table-waiting-turn">
+            Esperando a {visiblePlayers.find(p => p.id === currentPlayerId)?.name || 'otro jugador'}...
+          </div>
+        )}
 
         <div className="table-players">
           {visiblePlayers.map((p, i) => {
@@ -194,6 +210,9 @@ export default function PokerTable({ room, emit, setCallbacks, onLeave }) {
             const bbIdx = dealerIdx >= 0 ? (dealerIdx + 2) % activePlayers.length : -1
             const playerIdx = activePlayers.findIndex(ap => ap.id === p.id)
 
+            const lastHand = gameState?.lastHand
+            const handInfo = lastHand?.allHands?.find(h => h.playerId === p.id)
+
             return (
               <PlayerSeat
                 key={p.id}
@@ -203,6 +222,8 @@ export default function PokerTable({ room, emit, setCallbacks, onLeave }) {
                 isSmallBlind={playerIdx === sbIdx && sbIdx >= 0}
                 isBigBlind={playerIdx === bbIdx && bbIdx >= 0}
                 isMe={p.id === playerId}
+                showCards={roomPhase === 'showdown' && !p.folded}
+                handName={roomPhase === 'showdown' ? handInfo?.hand?.name : null}
               />
             )
           })}
@@ -212,13 +233,28 @@ export default function PokerTable({ room, emit, setCallbacks, onLeave }) {
           {communityCards.length === 0 && roomPhase === 'waiting' && (
             <div className="table-waiting">
               <div className="waiting-title">Esperando jugadores...</div>
-              <div className="waiting-sub">Comparte el código de sala con tus amigos</div>
-              {isHost && <div className="waiting-hint">Presiona "Iniciar Partida" cuando estén listos</div>}
+              <div className="waiting-sub">Comparte el código <strong>{roomCode}</strong> con tus amigos</div>
+              <div className="waiting-players-list">
+                {players.map(p => (
+                  <div key={p.id} className="waiting-player-item">
+                    <span className="waiting-player-icon">{p.isHost ? '👑' : '🃏'}</span>
+                    <span>{p.name}</span>
+                    {p.isHost && <span className="waiting-player-host">Anfitrión</span>}
+                  </div>
+                ))}
+              </div>
+              {isHost
+                ? <div className="waiting-hint">Presiona "Iniciar Partida" cuando estén listos</div>
+                : <div className="waiting-hint">Esperando a que el anfitrión inicie...</div>
+              }
             </div>
           )}
           {communityCards.map((card, i) => (
             <Card key={i} card={card} highlight={i === communityCards.length - 1 && roomPhase !== 'showdown'} />
           ))}
+          {communityCards.length === 0 && roomPhase !== 'waiting' && roomPhase !== 'game_over' && (
+            <div className="table-waiting-placeholder">Esperando cartas...</div>
+          )}
         </div>
 
         {roomPhase === 'showdown' && gameState?.lastHand && (
@@ -239,8 +275,10 @@ export default function PokerTable({ room, emit, setCallbacks, onLeave }) {
             {gameState?.players && (
               <div className="result-final-stacks">
                 {[...gameState.players].sort((a, b) => b.chips - a.chips).map((p, i) => (
-                  <div key={p.id} className="result-final-row">
-                    <span>{i + 1}º {p.name}</span>
+                  <div key={p.id} className={`result-final-row ${p.id === playerId ? 'result-final-me' : ''}`}>
+                    <span>
+                      {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`} {p.name}
+                    </span>
                     <span className="result-final-chips">${p.chips}</span>
                   </div>
                 ))}
@@ -250,18 +288,27 @@ export default function PokerTable({ room, emit, setCallbacks, onLeave }) {
           </div>
         )}
 
+        {lastAction && lastAction.type === 'error' && (
+          <div className="table-toast error-toast">{lastAction.text}</div>
+        )}
+
+        {roomPhase === 'showdown' && (
+          <div className="table-next-hand-hint">Nueva mano en breve...</div>
+        )}
+
         {me && !me.folded && !me.allIn && roomPhase !== 'waiting' && roomPhase !== 'showdown' && roomPhase !== 'game_over' && (
           <ActionButtons
             gameState={gameState}
             playerId={playerId}
             onAction={handleAction}
+            onShowSlider={() => setShowSlider(true)}
             timer={timer}
           />
         )}
 
-        {showSlider && (
+        {showSlider && me && (
           <BetSlider
-            min={gameState.currentBet + gameState.minRaise}
+            min={Math.min(gameState.currentBet + gameState.minRaise, me.chips + me.bet)}
             max={me.chips + me.bet}
             chips={me.chips}
             onConfirm={handleSliderConfirm}

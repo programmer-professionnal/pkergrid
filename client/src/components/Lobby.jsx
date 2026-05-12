@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-export default function Lobby({ emit, onJoin }) {
+export default function Lobby({ emit, connected, onJoin }) {
   const [name, setName] = useState('')
   const [roomCode, setRoomCode] = useState('')
   const [error, setError] = useState('')
@@ -14,7 +14,6 @@ export default function Lobby({ emit, onJoin }) {
     }
     setCreating(true)
     setError('')
-
     emit('create_room', { name: name.trim() }, (response) => {
       setCreating(false)
       if (response.success) {
@@ -41,7 +40,6 @@ export default function Lobby({ emit, onJoin }) {
     }
     setJoining(true)
     setError('')
-
     emit('join_room', { name: name.trim(), roomCode: roomCode.trim().toUpperCase() }, (response) => {
       setJoining(false)
       if (response.success) {
@@ -59,9 +57,13 @@ export default function Lobby({ emit, onJoin }) {
 
   return (
     <div className="lobby">
+      <div className="lobby-connection">
+        <span className={`conn-dot ${connected ? 'conn-on' : 'conn-off'}`} />
+        {connected ? 'Conectado' : 'Desconectado...'}
+      </div>
       <div className="lobby-card">
         <h1 className="lobby-title">♠ Pkergrid ♥</h1>
-        <p className="lobby-subtitle">Texas Hold'em Online</p>
+        <p className="lobby-subtitle">Texas Hold'em Online — Juega con amigos</p>
 
         <div className="lobby-input-group">
           <label>Tu nombre</label>
@@ -76,18 +78,12 @@ export default function Lobby({ emit, onJoin }) {
         </div>
 
         <div className="lobby-buttons">
-          <button
-            className="btn btn-primary"
-            onClick={handleCreate}
-            disabled={creating}
-          >
+          <button className="btn btn-primary" onClick={handleCreate} disabled={creating || !connected}>
             {creating ? 'Creando...' : 'Crear Sala'}
           </button>
         </div>
 
-        <div className="lobby-divider">
-          <span>o</span>
-        </div>
+        <div className="lobby-divider"><span>o</span></div>
 
         <div className="lobby-input-group">
           <label>Código de sala</label>
@@ -102,11 +98,7 @@ export default function Lobby({ emit, onJoin }) {
           />
         </div>
 
-        <button
-          className="btn btn-secondary"
-          onClick={handleJoin}
-          disabled={joining}
-        >
+        <button className="btn btn-secondary" onClick={handleJoin} disabled={joining || !connected}>
           {joining ? 'Uniéndose...' : 'Unirse a Sala'}
         </button>
 

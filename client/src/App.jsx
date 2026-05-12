@@ -5,10 +5,10 @@ import PokerTable from './components/PokerTable.jsx'
 
 export default function App() {
   const [room, setRoom] = useState(null)
-  const { emit, setCallbacks } = useSocket()
+  const { emit, setCallbacks, connected } = useSocket()
 
   if (!room) {
-    return <Lobby emit={emit} onJoin={(data) => setRoom(data)} />
+    return <Lobby emit={emit} connected={connected} onJoin={(data) => setRoom(data)} />
   }
 
   return (
@@ -16,6 +16,7 @@ export default function App() {
       room={room}
       emit={emit}
       setCallbacks={setCallbacks}
+      connected={connected}
       onLeave={() => setRoom(null)}
     />
   )

@@ -6,7 +6,8 @@ export const BIG_BLIND = 20
 const MIN_PLAYERS = 2
 
 export function canStartGame(room) {
-  return room.players.length >= MIN_PLAYERS
+  const alive = room.players.filter(p => p.chips > 0)
+  return alive.length >= MIN_PLAYERS
 }
 
 export function startGame(room) {
@@ -30,6 +31,7 @@ export function startGame(room) {
     lastRaiseIndex: -1,
     actionCount: 0,
     players,
+    eliminated: [],
   }
 
   const smallBlindIndex = (game.dealerIndex + 1) % players.length
@@ -68,12 +70,12 @@ export function startGame(room) {
   return true
 }
 
-export function getNextActivePlayer(players, currentIndex, excludeFolded = true) {
+export function getNextActivePlayer(players, currentIndex) {
   const count = players.length
   for (let i = 1; i <= count; i++) {
     const idx = (currentIndex + i) % count
     const p = players[idx]
-    if (!p.folded && !p.allIn && p.chips >= 0) return idx
+    if (!p.folded && !p.allIn && p.chips > 0) return idx
   }
   return -1
 }
@@ -86,6 +88,34 @@ export function hasBettingEnded(game) {
 
   const allCalls = active.every(p => p.bet === currentBet)
   return allCalls
+}
+
+export function autoFoldPlayer(room, playerId) {
+  const game = room.game
+  if (!game) return
+
+  const player = game.players.find(p => p.id === playerId)
+  if (!player || player.folded || player.allIn) return
+
+  player.folded = true
+
+  const allInExceptOne = game.players.filter(p => !p.folded).filter(p => !p.allIn).length <= 1
+  const oneLeft = game.players.filter(p => !p.folded).length === 1
+
+  if (oneLeft || allInExceptOne) {
+    advancePhase(room)
+    return
+  }
+
+  const currentPlayer = game.players[game.currentPlayerIndex]
+  if (currentPlayer.id === playerId || currentPlayer.folded || currentPlayer.allIn) {
+    const nextIdx = getNextActivePlayer(game.players, game.currentPlayerIndex)
+    if (nextIdx === -1) {
+      advancePhase(room)
+      return
+    }
+    game.currentPlayerIndex = nextIdx
+  }
 }
 
 export function processAction(room, playerId, action, amount = 0) {
@@ -239,7 +269,7 @@ function startNewBettingRound(room) {
     return
   }
 
-  const firstActive = game.players.findIndex(p => !p.folded && !p.allIn)
+  const firstActive = game.players.findIndex(p => !p.folded && !p.allIn && p.chips > 0)
   if (firstActive === -1) {
     advancePhase(room)
     return
@@ -267,12 +297,12 @@ function endHand(room, forcedWinner = null) {
     result = determineWinner(game.players, game.communityCards)
   }
 
-  const winnerShare = Math.floor(game.pot / result.winners.length)
+  const winnerShare = game.pot > 0 ? Math.floor(game.pot / result.winners.length) : 0
   for (const w of result.winners) {
     w.chips += winnerShare
   }
   const remainder = game.pot - winnerShare * result.winners.length
-  if (result.winners.length > 0) {
+  if (result.winners.length > 0 && remainder > 0) {
     result.winners[0].chips += remainder
   }
 
@@ -282,11 +312,15 @@ function endHand(room, forcedWinner = null) {
     handName: result.handName,
     pot: game.pot,
     communityCards: [...game.communityCards],
-    allHands: result.allHands,
+    allHands: result.allHands.map(h => ({
+      ...h,
+      cards: game.players.find(p => p.id === h.playerId)?.cards || [],
+    })),
   }
 
   const alivePlayers = game.players.filter(p => p.chips > 0)
   if (alivePlayers.length < MIN_PLAYERS) {
+    game.eliminated = game.players.filter(p => p.chips <= 0).map(p => p.id)
     room.phase = 'game_over'
   }
 }
@@ -302,6 +336,10 @@ export function startNewHand(room) {
   return startGame(room)
 }
 
+export function formatCards(cards) {
+  return cards.map(c => `${c.rank}${c.suitSymbol || c.suit}`).join(' ')
+}
+
 export function getPublicGameState(room, playerId) {
   if (!room.game) {
     return {
@@ -315,6 +353,7 @@ export function getPublicGameState(room, playerId) {
         allIn: false,
         cards: [],
         isHost: p.id === room.hostId,
+        eliminated: p.chips <= 0,
       })),
       communityCards: [],
       pot: 0,
@@ -339,6 +378,7 @@ export function getPublicGameState(room, playerId) {
     cards: p.id === playerId ? p.cards : [],
     isHost: p.id === room.hostId,
     totalBet: p.totalBet,
+    eliminated: p.chips <= 0,
   }))
 
   const myIndex = game.players.findIndex(p => p.id === playerId)

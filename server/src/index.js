@@ -10,8 +10,6 @@ import {
   joinRoom,
   leaveRoom,
   addChat,
-  deleteRoom,
-  getRoomByPlayerId,
 } from './roomManager.js'
 import {
   canStartGame,
@@ -19,6 +17,7 @@ import {
   processAction,
   startNewHand,
   getPublicGameState,
+  autoFoldPlayer,
 } from './gameEngine.js'
 
 const PORT = process.env.PORT || 3001
@@ -113,10 +112,9 @@ io.on('connection', (socket) => {
     }
 
     startGame(room)
-    const gameState = room.players.map(p => getPublicGameState(room, p.id))
-
-    room.players.forEach((p, i) => {
-      io.to(socket.data.roomCode).emit('game_state', gameState[i])
+    io.to(currentRoomCode).emit('game_state', getPublicGameState(room, currentPlayerId))
+    room.players.forEach(p => {
+      io.to(currentRoomCode).emit('game_state', getPublicGameState(room, p.id))
     })
 
     callback({ success: true })
@@ -133,30 +131,27 @@ io.on('connection', (socket) => {
       return
     }
 
-    if (room.phase === 'showdown' || room.phase === 'game_over') {
-      room.players.forEach((p, i) => {
-        const state = getPublicGameState(room, p.id)
-        io.to(socket.data.roomCode).emit('game_state', state)
+    if (room.phase === 'showdown') {
+      room.players.forEach(p => {
+        io.to(currentRoomCode).emit('game_state', getPublicGameState(room, p.id))
       })
 
-      setTimeout(() => {
-        if (room.phase === 'game_over') return
-        const started = startNewHand(room)
-        if (started) {
-          room.players.forEach((p, i) => {
-            const state = getPublicGameState(room, p.id)
-            io.to(socket.data.roomCode).emit('game_state', state)
+      if (room.phase !== 'game_over') {
+        setTimeout(() => {
+          if (room.phase === 'game_over') return
+          const started = startNewHand(room)
+          room.players.forEach(p => {
+            io.to(currentRoomCode).emit('game_state', getPublicGameState(room, p.id))
           })
-        } else {
-          room.players.forEach((p, i) => {
-            io.to(socket.data.roomCode).emit('game_state', getPublicGameState(room, p.id))
-          })
-        }
-      }, 5000)
+        }, 6000)
+      }
+    } else if (room.phase === 'game_over') {
+      room.players.forEach(p => {
+        io.to(currentRoomCode).emit('game_state', getPublicGameState(room, p.id))
+      })
     } else {
-      room.players.forEach((p, i) => {
-        const state = getPublicGameState(room, p.id)
-        io.to(socket.data.roomCode).emit('game_state', state)
+      room.players.forEach(p => {
+        io.to(currentRoomCode).emit('game_state', getPublicGameState(room, p.id))
       })
     }
 
@@ -183,6 +178,13 @@ io.on('connection', (socket) => {
     if (currentRoomCode && currentPlayerId) {
       const room = getRoom(currentRoomCode)
       if (room) {
+        if (room.game && room.phase === 'playing') {
+          autoFoldPlayer(room, currentPlayerId)
+          room.players.forEach(p => {
+            io.to(currentRoomCode).emit('game_state', getPublicGameState(room, p.id))
+          })
+        }
+
         leaveRoom(currentRoomCode, currentPlayerId)
 
         if (room.players.length > 0) {
