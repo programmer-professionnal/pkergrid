@@ -368,6 +368,7 @@ export function getPublicGameState(room, playerId) {
   }
 
   const game = room.game
+  const isShowdown = room.phase === 'showdown'
   const players = game.players.map(p => ({
     id: p.id,
     name: p.name,
@@ -375,7 +376,7 @@ export function getPublicGameState(room, playerId) {
     folded: p.folded,
     bet: p.bet,
     allIn: p.allIn,
-    cards: p.id === playerId ? p.cards : [],
+    cards: (p.id === playerId || (isShowdown && !p.folded)) ? p.cards : [],
     isHost: p.id === room.hostId,
     totalBet: p.totalBet,
     eliminated: p.chips <= 0,

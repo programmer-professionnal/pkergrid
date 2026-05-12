@@ -4,6 +4,7 @@ import PlayerSeat from './PlayerSeat.jsx'
 import ActionButtons from './ActionButtons.jsx'
 import BetSlider from './BetSlider.jsx'
 import Chat from './Chat.jsx'
+import Tutorial from './Tutorial.jsx'
 
 const TURN_TIMER = 30
 const BLIND_LEVELS = [
@@ -26,6 +27,7 @@ export default function PokerTable({ room, emit, setCallbacks, connected, onLeav
   const timerRef = useRef(null)
   const handCountRef = useRef(0)
   const [lastAction, setLastAction] = useState(null)
+  const [showTutorial, setShowTutorial] = useState(false)
 
   const onGameState = useCallback((state) => {
     setGameState(state)
@@ -165,6 +167,9 @@ export default function PokerTable({ room, emit, setCallbacks, connected, onLeav
           <span className="topbar-title">♠ Pkergrid ♥</span>
         </div>
         <div className="topbar-right">
+          <button className="btn btn-secondary btn-sm" onClick={() => setShowTutorial(true)}>
+            ? Cómo Jugar
+          </button>
           {roomPhase === 'waiting' && isHost && (
             <button className="btn btn-primary btn-sm" onClick={handleStart}>
               Iniciar Partida
@@ -316,6 +321,8 @@ export default function PokerTable({ room, emit, setCallbacks, connected, onLeav
           />
         )}
       </div>
+
+      {showTutorial && <Tutorial onClose={() => setShowTutorial(false)} />}
 
       <Chat
         messages={chatMessages}

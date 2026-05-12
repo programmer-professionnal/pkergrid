@@ -1038,6 +1038,133 @@ body {
 
 .chat-input button:hover { background: #27ae60; }
 
+/* TUTORIAL */
+.tutorial-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 300;
+  backdrop-filter: blur(4px);
+  padding: 20px;
+}
+
+.tutorial-modal {
+  background: #1a1a2e;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  padding: 32px;
+  max-width: 560px;
+  width: 100%;
+  max-height: 85vh;
+  overflow-y: auto;
+  position: relative;
+  color: #ddd;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.tutorial-modal h2 {
+  font-size: 24px;
+  color: #2ecc71;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.tutorial-modal section {
+  margin-bottom: 20px;
+}
+
+.tutorial-modal h3 {
+  font-size: 16px;
+  color: #f1c40f;
+  margin-bottom: 8px;
+}
+
+.tutorial-modal p {
+  color: #bbb;
+}
+
+.tutorial-modal ol, .tutorial-modal ul {
+  padding-left: 20px;
+  color: #bbb;
+}
+
+.tutorial-modal li {
+  margin-bottom: 4px;
+}
+
+.tutorial-controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 16px;
+}
+
+.tutorial-controls kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 6px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  margin-right: 6px;
+  font-family: inherit;
+}
+
+.tutorial-close {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 22px;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.tutorial-close:hover {
+  color: #fff;
+}
+
+.tutorial-hands {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tutorial-hand-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.tutorial-hand-name {
+  font-weight: 700;
+  color: #f1c40f;
+  white-space: nowrap;
+}
+
+.tutorial-hand-desc {
+  color: #aaa;
+  text-align: right;
+}
+
 /* RESPONSIVE */
 @media (max-width: 768px) {
   .table-players { gap: 10px; }
