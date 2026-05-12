@@ -1,6 +1,8 @@
 import Card from './Card.jsx'
 
-export default function PlayerSeat({ player, isCurrent, isDealer, isSmallBlind, isBigBlind, isMe, showCards, handName }) {
+export default function PlayerSeat({ player, isCurrent, isDealer, isSmallBlind, isBigBlind, isMe, myCards, showCards, handName }) {
+  const cardsToShow = isMe && myCards ? myCards : player.cards
+
   return (
     <div className={`seat ${isCurrent ? 'seat-current' : ''} ${player.folded ? 'seat-folded' : ''} ${player.eliminated ? 'seat-eliminated' : ''}`}>
       {isDealer && <div className="seat-dealer">D</div>}
@@ -14,9 +16,9 @@ export default function PlayerSeat({ player, isCurrent, isDealer, isSmallBlind, 
         <span className="chip-icon">●</span> {player.chips}
       </div>
       <div className="seat-cards">
-        {player.cards && player.cards.length > 0
-          ? player.cards.map((card, i) => (
-              <Card key={i} card={card} hidden={!(showCards || isMe)} small />
+        {cardsToShow && cardsToShow.length > 0
+          ? cardsToShow.map((card, i) => (
+              <Card key={i} card={card} hidden={isMe ? false : !showCards} small />
             ))
           : <div className="seat-cards-placeholder">—</div>
         }

@@ -244,6 +244,7 @@ export default function PokerTable({ room, emit, setCallbacks, connected, onLeav
                 isSmallBlind={playerIdx === sbIdx && sbIdx >= 0}
                 isBigBlind={playerIdx === bbIdx && bbIdx >= 0}
                 isMe={p.id === playerId}
+                myCards={p.id === playerId ? gameState?.myCards : null}
                 showCards={roomPhase === 'showdown' && !p.folded}
                 handName={roomPhase === 'showdown' ? handInfo?.hand?.name : null}
               />
