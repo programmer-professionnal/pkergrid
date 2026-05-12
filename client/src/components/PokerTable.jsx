@@ -26,6 +26,7 @@ export default function PokerTable({ room, emit, setCallbacks, connected, onLeav
   const [blindLevel, setBlindLevel] = useState(0)
   const timerRef = useRef(null)
   const handCountRef = useRef(0)
+  const prevPhaseRef = useRef(null)
   const [lastAction, setLastAction] = useState(null)
   const [showTutorial, setShowTutorial] = useState(false)
 
@@ -75,7 +76,14 @@ export default function PokerTable({ room, emit, setCallbacks, connected, onLeav
   }, [])
 
   useEffect(() => {
+    const prev = prevPhaseRef.current
+    prevPhaseRef.current = gameState?.phase
+
     if (gameState?.phase === 'preflop') {
+      if (prev === 'game_over' || prev === 'waiting' || prev === null) {
+        handCountRef.current = 0
+        setBlindLevel(0)
+      }
       handCountRef.current++
       if (handCountRef.current > 1 && handCountRef.current % 5 === 0) {
         setBlindLevel(prev => Math.min(prev + 1, BLIND_LEVELS.length - 1))
@@ -140,6 +148,15 @@ export default function PokerTable({ room, emit, setCallbacks, connected, onLeav
   }
 
   const facingBet = me && gameState ? Math.max(0, gameState.currentBet - me.bet) : 0
+  const canCheck = (p, g) => p && g ? p.bet >= g.currentBet : false
+
+  function getPhaseTip(phase, callAmount, canCheckVal) {
+    if (callAmount > 0) return `Igualar cuesta $${callAmount}. Si tus cartas son malas, es mejor retirarse.`
+    if (phase === 'preflop' && !canCheckVal) return `Tienes que igualar o retirarte. Si tus cartas son bajas (2-7, 3-8), retírate.`
+    if (canCheckVal) return `Puedes verificar gratis. No apuestes si no tienes una mano fuerte.`
+    if (phase === 'preflop') return `Mira tus cartas. Manos fuertes: pares altos (AA, KK), As+Rey, As+Reina.`
+    return `Evalúa las cartas comunitarias. ¿Crees que tienes la mejor mano?`
+  }
 
   if (timer !== null && timer <= 5) {
     document.documentElement.style.setProperty('--timer-urgent', '#e74c3c')
@@ -302,13 +319,18 @@ export default function PokerTable({ room, emit, setCallbacks, connected, onLeav
         )}
 
         {me && !me.folded && !me.allIn && roomPhase !== 'waiting' && roomPhase !== 'showdown' && roomPhase !== 'game_over' && (
-          <ActionButtons
-            gameState={gameState}
-            playerId={playerId}
-            onAction={handleAction}
-            onShowSlider={() => setShowSlider(true)}
-            timer={timer}
-          />
+          <>
+            <div className="table-tip">
+              💡 {getPhaseTip(roomPhase, facingBet, canCheck(me, gameState))}
+            </div>
+            <ActionButtons
+              gameState={gameState}
+              playerId={playerId}
+              onAction={handleAction}
+              onShowSlider={() => setShowSlider(true)}
+              timer={timer}
+            />
+          </>
         )}
 
         {showSlider && me && (

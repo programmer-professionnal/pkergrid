@@ -14,15 +14,11 @@ export default function PlayerSeat({ player, isCurrent, isDealer, isSmallBlind, 
         <span className="chip-icon">●</span> {player.chips}
       </div>
       <div className="seat-cards">
-        {(showCards && player.cards && player.cards.length > 0)
+        {player.cards && player.cards.length > 0
           ? player.cards.map((card, i) => (
-              <Card key={i} card={card} hidden={false} small />
+              <Card key={i} card={card} hidden={!(showCards || isMe)} small />
             ))
-          : player.cards && player.cards.length > 0
-            ? player.cards.map((card, i) => (
-                <Card key={i} card={card} hidden={!showCards} small />
-              ))
-            : <div className="seat-cards-placeholder">—</div>
+          : <div className="seat-cards-placeholder">—</div>
         }
       </div>
       {player.bet > 0 && (

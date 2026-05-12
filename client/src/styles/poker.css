@@ -698,6 +698,18 @@ body {
   100% { transform: translateY(0) scale(1); opacity: 1; }
 }
 
+/* TIPS */
+.table-tip {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.6);
+  text-align: center;
+  max-width: 480px;
+  padding: 6px 16px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  margin-top: 4px;
+}
+
 /* ACTIONS */
 .actions {
   display: flex;
@@ -1099,29 +1111,6 @@ body {
   margin-bottom: 4px;
 }
 
-.tutorial-controls {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 6px 16px;
-}
-
-.tutorial-controls kbd {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 24px;
-  height: 24px;
-  padding: 0 6px;
-  background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 5px;
-  font-size: 12px;
-  font-weight: 700;
-  color: #fff;
-  margin-right: 6px;
-  font-family: inherit;
-}
-
 .tutorial-close {
   position: absolute;
   top: 12px;
@@ -1138,31 +1127,98 @@ body {
   color: #fff;
 }
 
+.tutorial-hint {
+  font-size: 13px;
+  color: #888;
+  margin-bottom: 8px;
+}
+
+.tutorial-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tutorial-action {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 8px;
+  font-size: 14px;
+  color: #ccc;
+}
+
+.tutorial-action strong {
+  color: #fff;
+}
+
+.tutorial-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #fff;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
 .tutorial-hands {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
 }
 
 .tutorial-hand-row {
   display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 6px 10px;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 10px;
   background: rgba(255, 255, 255, 0.04);
   border-radius: 6px;
   font-size: 13px;
+}
+
+.tutorial-hand-rank {
+  font-weight: 800;
+  color: #666;
+  min-width: 22px;
+  font-size: 11px;
 }
 
 .tutorial-hand-name {
   font-weight: 700;
   color: #f1c40f;
   white-space: nowrap;
+  min-width: 130px;
 }
 
 .tutorial-hand-desc {
   color: #aaa;
-  text-align: right;
+}
+
+.tutorial-start-btn {
+  display: block;
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, #1a8a3f, #2ecc71);
+  border: none;
+  border-radius: 10px;
+  color: #fff;
+  font-size: 17px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: background 0.2s;
+}
+
+.tutorial-start-btn:hover {
+  background: linear-gradient(135deg, #219a4f, #3ddc84);
 }
 
 /* RESPONSIVE - Tablet & small desktop */
@@ -1278,6 +1334,12 @@ body {
 
   .table-community { min-height: 72px; gap: 5px; margin-bottom: 12px; }
 
+  .table-tip {
+    font-size: 11px;
+    max-width: 100%;
+    padding: 4px 12px;
+  }
+
   .actions {
     flex-direction: row;
     flex-wrap: wrap;
@@ -1356,9 +1418,8 @@ body {
   }
   .tutorial-modal h2 { font-size: 20px; }
   .tutorial-modal h3 { font-size: 15px; }
-  .tutorial-controls { grid-template-columns: 1fr; }
-  .tutorial-hand-row { font-size: 12px; flex-direction: column; gap: 2px; }
-  .tutorial-hand-desc { text-align: left; }
+  .tutorial-hand-row { font-size: 12px; gap: 2px; }
+  .tutorial-hand-name { min-width: auto; }
 }
 
 /* RESPONSIVE - Small phones */

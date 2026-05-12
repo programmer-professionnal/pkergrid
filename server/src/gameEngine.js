@@ -369,6 +369,34 @@ export function getPublicGameState(room, playerId) {
 
   const game = room.game
   const isShowdown = room.phase === 'showdown'
+
+  if (room.phase === 'game_over') {
+    return {
+      phase: 'game_over',
+      players: room.players.map(p => ({
+        id: p.id,
+        name: p.name,
+        chips: p.chips,
+        folded: false,
+        bet: 0,
+        allIn: false,
+        cards: [],
+        isHost: p.id === room.hostId,
+        eliminated: p.chips <= 0,
+      })),
+      communityCards: game.communityCards,
+      pot: game.pot,
+      currentPlayerIndex: -1,
+      minRaise: 0,
+      currentBet: 0,
+      dealerIndex: -1,
+      myCards: [],
+      lastHand: room.lastHand,
+      smallBlind: SMALL_BLIND,
+      bigBlind: BIG_BLIND,
+    }
+  }
+
   const players = game.players.map(p => ({
     id: p.id,
     name: p.name,

@@ -106,13 +106,21 @@ io.on('connection', (socket) => {
       callback({ success: false, error: 'Solo el anfitrión puede iniciar' })
       return
     }
+
+    if (room.phase === 'game_over') {
+      room.players.forEach(p => { p.chips = 1000 })
+      room.game = null
+      room.lastHand = null
+      room.phase = 'waiting'
+    }
+
     if (!canStartGame(room)) {
       callback({ success: false, error: 'Se necesitan al menos 2 jugadores' })
       return
     }
 
     startGame(room)
-    io.to(currentRoomCode).emit('game_state', getPublicGameState(room, currentPlayerId))
+
     room.players.forEach(p => {
       io.to(currentRoomCode).emit('game_state', getPublicGameState(room, p.id))
     })
@@ -140,6 +148,9 @@ io.on('connection', (socket) => {
         setTimeout(() => {
           if (room.phase === 'game_over') return
           const started = startNewHand(room)
+          if (!started) {
+            room.phase = 'game_over'
+          }
           room.players.forEach(p => {
             io.to(currentRoomCode).emit('game_state', getPublicGameState(room, p.id))
           })
