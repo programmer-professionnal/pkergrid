@@ -1165,72 +1165,287 @@ body {
   text-align: right;
 }
 
-/* RESPONSIVE */
+/* RESPONSIVE - Tablet & small desktop */
+@media (max-width: 900px) {
+  .table-players { max-width: 100%; }
+  .seat { min-width: 130px; }
+}
+
+/* RESPONSIVE - Mobile landscape & small tablets */
 @media (max-width: 768px) {
-  .table-players { gap: 10px; }
-  .seat { min-width: 120px; padding: 10px 12px; }
-  .card { width: 56px; height: 78px; border-radius: 8px; }
-  .card-small { width: 42px; height: 58px; }
-  .card-center-suit { font-size: 22px; }
-  .card-small .card-center-suit { font-size: 16px; }
-  .card-rank { font-size: 13px; }
-  .card-small .card-rank { font-size: 11px; }
+  .topbar-center { display: none; }
+
+  .table-topbar {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 8px 10px;
+    justify-content: center;
+  }
+
+  .topbar-left {
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .topbar-code { font-size: 15px; }
+  .topbar-players-count { font-size: 12px; }
+  .topbar-conn { font-size: 11px; padding: 2px 8px; }
+
+  .topbar-right {
+    gap: 6px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .topbar-right .btn-sm {
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+
+  .table-felt {
+    padding: 14px 10px;
+    min-height: 400px;
+  }
+
+  .table-phase {
+    gap: 8px;
+    font-size: 11px;
+    margin-bottom: 8px;
+  }
+
+  .table-pot { font-size: 14px; }
+  .table-blinds { font-size: 10px; padding: 2px 8px; }
+  .table-to-call { font-size: 11px; }
+  .table-waiting-turn { font-size: 13px; }
+
+  .table-players { gap: 8px; margin-bottom: 12px; }
+  .seat {
+    min-width: 100px;
+    padding: 8px 10px;
+    border-radius: 10px;
+  }
+
+  .seat-dealer, .seat-blind {
+    width: 24px;
+    height: 24px;
+    font-size: 10px;
+    top: -8px;
+  }
+  .seat-dealer { right: -8px; }
+  .seat-blind { left: -8px; }
+
+  .seat-name { font-size: 13px; }
+  .seat-you { font-size: 11px; }
+  .seat-chips { font-size: 13px; }
+  .chip-icon { font-size: 10px; }
+  .seat-cards { min-height: 44px; gap: 4px; }
+  .seat-cards-placeholder { font-size: 14px; }
+
+  .seat-bet {
+    font-size: 10px;
+    padding: 1px 8px;
+    bottom: -12px;
+  }
+  .seat-status {
+    font-size: 9px;
+    padding: 1px 8px;
+    bottom: -12px;
+  }
+  .seat-hand {
+    font-size: 9px;
+    bottom: -26px;
+  }
+  .seat-indicator {
+    font-size: 16px;
+    top: -16px;
+  }
+
+  .card { width: 50px; height: 70px; border-radius: 7px; }
+  .card-small { width: 38px; height: 54px; }
+  .card-center-suit { font-size: 20px; }
+  .card-small .card-center-suit { font-size: 14px; }
+  .card-rank { font-size: 12px; }
+  .card-small .card-rank { font-size: 10px; }
+  .card-suit { font-size: 11px; }
+  .card-small .card-suit { font-size: 9px; }
+  .card-corner-top { top: 3px; left: 4px; }
+  .card-corner-bottom { bottom: 3px; right: 4px; }
+  .card-corner-wide { left: 2px; }
+
+  .table-community { min-height: 72px; gap: 5px; margin-bottom: 12px; }
 
   .actions {
-    flex-direction: column;
-    gap: 10px;
-    padding: 14px;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 10px 12px;
+    margin-top: 8px;
+    width: 100%;
+    justify-content: center;
   }
+
+  .actions-timer { margin-right: 4px; }
+  .timer-ring { width: 38px; height: 38px; }
+  .timer-ring span { width: 30px; height: 30px; font-size: 14px; }
 
   .actions-buttons {
     flex-wrap: wrap;
     justify-content: center;
-    gap: 8px;
+    gap: 6px;
   }
 
-  .action-btn { padding: 10px 16px; font-size: 13px; }
+  .action-btn {
+    padding: 12px 16px;
+    font-size: 13px;
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .action-key {
+    width: 20px;
+    height: 20px;
+    font-size: 10px;
+  }
 
   .chat {
     width: 100%;
-    max-height: 250px;
+    max-height: 200px;
+    border-radius: 10px 0 0 0;
   }
 
-  .chat-minimized { max-height: 38px; }
+  .chat-minimized { max-height: 34px; }
+  .chat-header { padding: 8px 12px; font-size: 12px; }
+  .chat-messages { padding: 6px 10px; max-height: 140px; }
+  .chat-msg { font-size: 13px; }
+  .chat-input input { padding: 8px 12px; font-size: 13px; }
+  .chat-input button { padding: 8px 14px; font-size: 13px; }
 
-  .table-topbar {
-    flex-direction: column;
-    gap: 8px;
-    padding: 10px 14px;
+  .table-result { padding: 12px 16px; max-width: 100%; }
+  .result-winner { font-size: 16px; }
+  .result-hand { font-size: 13px; }
+  .result-final-row { font-size: 13px; padding: 6px 10px; }
+
+  .table-next-hand-hint { font-size: 12px; }
+  .table-waiting-placeholder { font-size: 14px; }
+
+  .waiting-title { font-size: 20px; }
+  .waiting-sub { font-size: 14px; }
+  .waiting-sub strong { font-size: 22px; }
+  .waiting-player-item { font-size: 14px; padding: 8px 12px; }
+  .waiting-players-list { max-width: 100%; }
+
+  .lobby-card { padding: 28px 24px; width: 100%; }
+  .lobby-title { font-size: 30px; }
+  .lobby-subtitle { font-size: 14px; }
+  .lobby-input-group input { font-size: 16px; padding: 12px 14px; }
+
+  .bet-slider-modal { padding: 20px; width: 92vw; }
+  .bet-slider-modal h3 { font-size: 18px; }
+  .bet-slider-info { font-size: 14px; }
+  .bet-slider-value { font-size: 28px; }
+  .bet-slider-input { height: 8px; }
+
+  .tutorial-modal {
+    padding: 20px;
+    font-size: 14px;
+    max-height: 90vh;
+  }
+  .tutorial-modal h2 { font-size: 20px; }
+  .tutorial-modal h3 { font-size: 15px; }
+  .tutorial-controls { grid-template-columns: 1fr; }
+  .tutorial-hand-row { font-size: 12px; flex-direction: column; gap: 2px; }
+  .tutorial-hand-desc { text-align: left; }
+}
+
+/* RESPONSIVE - Small phones */
+@media (max-width: 480px) {
+  .seat { min-width: 80px; padding: 6px 8px; }
+
+  .seat-name { font-size: 12px; }
+  .seat-chips { font-size: 12px; }
+  .seat-cards { min-height: 38px; }
+
+  .seat-dealer, .seat-blind {
+    width: 20px;
+    height: 20px;
+    font-size: 8px;
+    top: -6px;
+  }
+  .seat-dealer { right: -6px; }
+  .seat-blind { left: -6px; }
+
+  .seat-bet { font-size: 9px; padding: 1px 6px; bottom: -10px; }
+  .seat-status { font-size: 8px; padding: 1px 6px; bottom: -10px; }
+  .seat-hand { font-size: 8px; bottom: -22px; }
+  .seat-indicator { font-size: 14px; top: -14px; }
+
+  .card { width: 42px; height: 60px; }
+  .card-small { width: 32px; height: 46px; }
+  .card-center-suit { font-size: 16px; }
+  .card-small .card-center-suit { font-size: 12px; }
+  .card-rank { font-size: 11px; }
+  .card-small .card-rank { font-size: 9px; }
+  .card-suit { font-size: 9px; }
+  .card-small .card-suit { font-size: 8px; }
+  .card-corner-top { top: 2px; left: 3px; }
+  .card-corner-bottom { bottom: 2px; right: 3px; }
+  .card-corner-wide { left: 1px; }
+
+  .table-community { min-height: 62px; gap: 3px; }
+  .table-players { gap: 6px; }
+
+  .actions {
+    padding: 8px 6px;
+    gap: 4px;
   }
 
-  .topbar-left {
-    gap: 10px;
-    flex-wrap: wrap;
-    justify-content: center;
+  .actions-timer { display: none; }
+
+  .action-btn {
+    padding: 10px 10px;
+    font-size: 11px;
+    min-width: 40px;
+    min-height: 40px;
   }
+
+  .action-key { display: none; }
+
+  .topbar-code { font-size: 13px; }
+  .topbar-right .btn-sm { padding: 4px 8px; font-size: 11px; }
 
   .table-phase {
-    margin-bottom: 12px;
-    gap: 10px;
-    font-size: 12px;
+    font-size: 10px;
+    gap: 6px;
   }
 
-  .table-community { min-height: 80px; gap: 6px; }
-  .table-topbar { text-align: center; }
+  .table-pot { font-size: 12px; }
+  .table-blinds { font-size: 9px; }
 
-  .timer-ring { width: 42px; height: 42px; }
-  .timer-ring span { width: 34px; height: 34px; font-size: 16px; }
+  .chat { max-height: 160px; }
+  .chat-messages { max-height: 100px; }
+  .chat-msg { font-size: 12px; }
 
-  .seat-hand { font-size: 10px; bottom: -30px; }
-  .seat-bet { font-size: 11px; padding: 2px 10px; }
+  .table-result { padding: 10px 12px; }
+  .result-winner { font-size: 14px; }
+  .result-hand { font-size: 12px; }
 
-  .table-result { padding: 14px 20px; }
-  .result-winner { font-size: 18px; }
-  .result-hand { font-size: 14px; }
-  .result-final-row { font-size: 14px; }
+  .lobby-card { padding: 24px 18px; }
+  .lobby-title { font-size: 26px; }
+  .lobby-subtitle { font-size: 13px; }
+  .lobby-input-group input { padding: 10px 12px; font-size: 14px; }
+  .lobby-input-group label { font-size: 12px; }
 
-  .lobby-card { padding: 32px; }
-  .lobby-title { font-size: 34px; }
-  .waiting-sub strong { font-size: 24px; }
-  .bet-slider-modal { padding: 24px; width: 340px; }
+  .bet-slider-modal { padding: 16px; }
+  .bet-slider-value { font-size: 24px; }
+  .bet-preset-btn { padding: 6px 10px; font-size: 12px; }
+
+  .waiting-title { font-size: 18px; }
+  .waiting-sub strong { font-size: 20px; }
+
+  .tutorial-modal { padding: 16px; font-size: 13px; }
+  .tutorial-modal h2 { font-size: 18px; }
 }
