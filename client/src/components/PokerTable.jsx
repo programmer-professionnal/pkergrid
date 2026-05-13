@@ -34,8 +34,6 @@ export default function PokerTable({ room, emit, setCallbacks, connected, onLeav
   const onGameState = useCallback((state) => {
     const prev = prevPhaseRef.current
     prevPhaseRef.current = state.phase
-    prevPotsRef.current = state?.pots
-    prevCommunityRef.current = state?.communityCards
 
     setGameState(state)
     if (state.players) setPlayers(state.players)
@@ -73,6 +71,8 @@ export default function PokerTable({ room, emit, setCallbacks, connected, onLeav
       }
     }
 
+    prevCommunityRef.current = state.communityCards
+
     if (state.phase === 'showdown' && prev !== 'showdown') {
       Sound.playShowdown()
     }
@@ -83,7 +83,7 @@ export default function PokerTable({ room, emit, setCallbacks, connected, onLeav
       }
     }
 
-  }, [playerId, emit])
+  }, [playerId, emit, gameState])
 
   const onRoomUpdate = useCallback((data) => {
     if (data.players) setPlayers(data.players)
