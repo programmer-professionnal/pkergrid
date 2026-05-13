@@ -58,6 +58,7 @@ export default function PokerTable({ room, emit, setCallbacks, connected, onLeav
     }
 
     if (prev === 'waiting' && state.phase === 'preflop') {
+      setShowConfig(false)
       Sound.playCardDeal()
       setAnimatedCards(true)
       setTimeout(() => setAnimatedCards(false), 500)
