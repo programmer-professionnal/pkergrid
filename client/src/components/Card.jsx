@@ -12,12 +12,15 @@ const SUIT_COLORS = {
   s: '#1a1a1a',
 }
 
-export default function Card({ card, hidden, small, highlight }) {
+export default function Card({ card, hidden, small, highlight, animationDelay = 0 }) {
   if (!card) return null
 
   if (hidden) {
     return (
-      <div className={`card card-back ${small ? 'card-small' : ''}`}>
+      <div
+        className={`card card-back ${small ? 'card-small' : ''} card-anim-in`}
+        style={{ animationDelay: `${animationDelay}ms` }}
+      >
         <div className="card-back-pattern" />
       </div>
     )
@@ -29,8 +32,8 @@ export default function Card({ card, hidden, small, highlight }) {
 
   return (
     <div
-      className={`card card-face ${small ? 'card-small' : ''} ${highlight ? 'card-highlight' : ''}`}
-      style={{ color }}
+      className={`card card-face ${small ? 'card-small' : ''} ${highlight ? 'card-highlight' : ''} card-anim-in`}
+      style={{ color, animationDelay: `${animationDelay}ms` }}
     >
       <div className={`card-corner card-corner-top ${isTen ? 'card-corner-wide' : ''}`}>
         <span className="card-rank">{card.rank}</span>

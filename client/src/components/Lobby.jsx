@@ -6,6 +6,7 @@ export default function Lobby({ emit, connected, onJoin }) {
   const [error, setError] = useState('')
   const [creating, setCreating] = useState(false)
   const [joining, setJoining] = useState(false)
+  const [spectating, setSpectating] = useState(false)
 
   function handleCreate() {
     if (!name.trim()) {
@@ -55,6 +56,28 @@ export default function Lobby({ emit, connected, onJoin }) {
     })
   }
 
+  function handleSpectate() {
+    if (!roomCode.trim()) {
+      setError('Escribe el código de la sala')
+      return
+    }
+    setSpectating(true)
+    setError('')
+    emit('join_as_spectator', { roomCode: roomCode.trim().toUpperCase() }, (response) => {
+      setSpectating(false)
+      if (response.success) {
+        onJoin({
+          playerId: response.playerId,
+          roomCode: response.roomCode,
+          players: response.players,
+          name: 'Espectador',
+        })
+      } else {
+        setError(response.error || 'Error al unirse como espectador')
+      }
+    })
+  }
+
   return (
     <div className="lobby">
       <div className="lobby-connection">
@@ -100,6 +123,10 @@ export default function Lobby({ emit, connected, onJoin }) {
 
         <button className="btn btn-secondary" onClick={handleJoin} disabled={joining || !connected}>
           {joining ? 'Uniéndose...' : 'Unirse a Sala'}
+        </button>
+
+        <button className="btn btn-secondary btn-spectate" onClick={handleSpectate} disabled={spectating || !connected || !roomCode.trim()}>
+          {spectating ? 'Entrando...' : 'Espectador'}
         </button>
 
         {error && <p className="lobby-error">{error}</p>}

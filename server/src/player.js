@@ -8,6 +8,8 @@ export class Player {
     this.folded = false
     this.allIn = false
     this.totalBet = 0
+    this.spectator = false
+    this.disconnected = false
   }
 
   reset() {

@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 
-export default function ActionButtons({ gameState, playerId, onAction, timer, onShowSlider }) {
+export default function ActionButtons({ gameState, playerId, onAction, timer, onShowSlider, confirmFold, onConfirmFold, onCancelFold }) {
   if (!gameState) return null
 
   const me = gameState.players.find(p => p.id === playerId)
@@ -17,7 +17,13 @@ export default function ActionButtons({ gameState, playerId, onAction, timer, on
     function handleKey(e) {
       if (e.target.tagName === 'INPUT') return
       switch (e.key) {
-        case '1': onAction('fold'); break
+        case '1':
+          if (confirmFold) {
+            onConfirmFold()
+          } else {
+            onAction('fold')
+          }
+          break
         case '2': canCheck ? onAction('check') : onAction('call'); break
         case '3':
           if (canRaise) {
@@ -31,11 +37,14 @@ export default function ActionButtons({ gameState, playerId, onAction, timer, on
           }
           break
         case '4': onAction('all_in'); break
+        case 'Escape':
+          if (confirmFold) onCancelFold()
+          break
       }
     }
     window.addEventListener('keydown', handleKey)
     return () => window.removeEventListener('keydown', handleKey)
-  }, [canCheck, canRaise, me.chips, me.bet, gameState, onAction, onShowSlider])
+  }, [canCheck, canRaise, me.chips, me.bet, gameState, onAction, onShowSlider, confirmFold, onConfirmFold, onCancelFold])
 
   return (
     <div className="actions">

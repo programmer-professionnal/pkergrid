@@ -10,6 +10,7 @@ import {
   joinRoom,
   leaveRoom,
   addChat,
+  getRoomByPlayerId,
 } from './roomManager.js'
 import {
   canStartGame,
@@ -18,7 +19,9 @@ import {
   startNewHand,
   getPublicGameState,
   autoFoldPlayer,
+  DEFAULT_CONFIG,
 } from './gameEngine.js'
+import { createBotPlayer, decideBotAction } from './botManager.js'
 
 const PORT = process.env.PORT || 3001
 
@@ -36,6 +39,33 @@ const io = new Server(httpServer, {
   pingTimeout: 20000,
 })
 
+const playerSockets = new Map()
+
+const showdownTimers = new Map()
+
+function broadcastGameState(roomCode) {
+  const room = getRoom(roomCode)
+  if (!room) return
+  room.players.forEach(p => {
+    io.to(roomCode).emit('game_state', getPublicGameState(room, p.id))
+  })
+  processBotTurns(room)
+
+  if (room.phase === 'showdown' && !showdownTimers.has(roomCode)) {
+    const timer = setTimeout(() => {
+      showdownTimers.delete(roomCode)
+      const r = getRoom(roomCode)
+      if (!r || r.phase === 'game_over') return
+      if (r.phase === 'showdown') {
+        const started = startNewHand(r)
+        if (!started) r.phase = 'game_over'
+        broadcastGameState(roomCode)
+      }
+    }, 6000)
+    showdownTimers.set(roomCode, timer)
+  }
+}
+
 io.on('connection', (socket) => {
   let currentRoomCode = null
   let currentPlayerId = null
@@ -46,10 +76,12 @@ io.on('connection', (socket) => {
     const player = new Player(id, name)
     player.isHost = true
     room.hostId = id
+    room.config = { ...DEFAULT_CONFIG }
     room.players.push(player)
 
     currentRoomCode = room.code
     currentPlayerId = id
+    playerSockets.set(id, socket.id)
 
     socket.join(room.code)
     socket.data.playerId = id
@@ -60,7 +92,7 @@ io.on('connection', (socket) => {
       roomCode: room.code,
       playerId: id,
       players: room.players.map(p => ({
-        id: p.id, name: p.name, chips: p.chips, isHost: p.id === room.hostId,
+        id: p.id, name: p.name, chips: p.chips, isHost: p.id === room.hostId, spectator: !!p.spectator,
       })),
     })
   })
@@ -77,6 +109,7 @@ io.on('connection', (socket) => {
 
     currentRoomCode = roomCode
     currentPlayerId = id
+    playerSockets.set(id, socket.id)
 
     socket.join(roomCode)
     socket.data.playerId = id
@@ -87,16 +120,170 @@ io.on('connection', (socket) => {
       roomCode: result.room.code,
       playerId: id,
       players: result.room.players.map(p => ({
-        id: p.id, name: p.name, chips: p.chips, isHost: p.id === result.room.hostId,
+        id: p.id, name: p.name, chips: p.chips, isHost: p.id === result.room.hostId, spectator: !!p.spectator,
       })),
     })
 
     socket.to(roomCode).emit('room_update', {
       players: result.room.players.map(p => ({
-        id: p.id, name: p.name, chips: p.chips, isHost: p.id === result.room.hostId,
+        id: p.id, name: p.name, chips: p.chips, isHost: p.id === result.room.hostId, spectator: !!p.spectator,
       })),
     })
   })
+
+  socket.on('join_as_spectator', ({ roomCode }, callback) => {
+    const room = getRoom(roomCode)
+    if (!room) {
+      callback({ success: false, error: 'La sala no existe' })
+      return
+    }
+
+    const id = uuidv4()
+    const player = new Player(id, 'Espectador')
+    player.spectator = true
+    room.players.push(player)
+
+    currentRoomCode = roomCode
+    currentPlayerId = id
+    playerSockets.set(id, socket.id)
+
+    socket.join(roomCode)
+    socket.data.playerId = id
+    socket.data.roomCode = roomCode
+
+    callback({
+      success: true,
+      roomCode,
+      playerId: id,
+      isSpectator: true,
+      players: room.players.map(p => ({
+        id: p.id, name: p.name, chips: p.chips, isHost: p.id === room.hostId, spectator: !!p.spectator,
+      })),
+    })
+
+    if (room.game) {
+      io.to(roomCode).emit('game_state', getPublicGameState(room, id))
+    }
+  })
+
+  socket.on('reconnect_player', ({ playerId, roomCode }, callback) => {
+    const room = getRoom(roomCode)
+    if (!room) {
+      callback({ success: false, error: 'Sala no encontrada' })
+      return
+    }
+
+    const player = room.players.find(p => p.id === playerId)
+    if (!player) {
+      callback({ success: false, error: 'Jugador no encontrado' })
+      return
+    }
+
+    currentRoomCode = roomCode
+    currentPlayerId = playerId
+    playerSockets.set(playerId, socket.id)
+    player.disconnected = false
+
+    socket.join(roomCode)
+    socket.data.playerId = playerId
+    socket.data.roomCode = roomCode
+
+    callback({
+      success: true,
+      roomCode,
+      playerId,
+      name: player.name,
+      players: room.players.map(p => ({
+        id: p.id, name: p.name, chips: p.chips, isHost: p.id === room.hostId, spectator: !!p.spectator,
+      })),
+    })
+
+    if (room.game) {
+      socket.emit('game_state', getPublicGameState(room, playerId))
+    }
+  })
+
+  socket.on('add_bot', (_, callback) => {
+    if (!currentRoomCode) return
+    const room = getRoom(currentRoomCode)
+    if (!room || room.hostId !== currentPlayerId) {
+      if (callback) callback({ success: false, error: 'Solo el anfitrión' })
+      return
+    }
+    if (room.players.filter(p => !p.spectator).length >= 9) {
+      if (callback) callback({ success: false, error: 'Sala llena' })
+      return
+    }
+
+    const bot = createBotPlayer()
+    bot.chips = (room.config || DEFAULT_CONFIG).startingChips
+    room.players.push(bot)
+
+    io.to(currentRoomCode).emit('room_update', {
+      players: room.players.map(p => ({
+        id: p.id, name: p.name, chips: p.chips, isHost: p.id === room.hostId, spectator: !!p.spectator,
+      })),
+    })
+    if (callback) callback({ success: true, bot })
+  })
+
+  socket.on('remove_bots', (_, callback) => {
+    if (!currentRoomCode) return
+    const room = getRoom(currentRoomCode)
+    if (!room || room.hostId !== currentPlayerId) {
+      if (callback) callback({ success: false, error: 'Solo el anfitrión' })
+      return
+    }
+
+    if (room.phase !== 'waiting' && room.phase !== 'game_over') {
+      if (callback) callback({ success: false, error: 'No durante la partida' })
+      return
+    }
+
+    room.players = room.players.filter(p => !p.isBot)
+    if (room.game) {
+      room.game.players = room.game.players.filter(p => !p.isBot)
+    }
+
+    io.to(currentRoomCode).emit('room_update', {
+      players: room.players.map(p => ({
+        id: p.id, name: p.name, chips: p.chips, isHost: p.id === room.hostId, spectator: !!p.spectator,
+      })),
+    })
+    if (callback) callback({ success: true })
+  })
+
+  function processBotTurns(room) {
+    const game = room.game
+    if (!game || room.phase !== 'playing') return
+
+    const BOT_DELAY = 800
+
+    function doBotTurn() {
+      if (!game || room.phase !== 'playing') return
+      const currentPlayer = game.players[game.currentPlayerIndex]
+      if (!currentPlayer || !currentPlayer.isBot || currentPlayer.folded || currentPlayer.allIn) return
+
+      const decision = decideBotAction(
+        currentPlayer,
+        game,
+        game.communityCards,
+        game.currentBet,
+        game.minRaise,
+      )
+      if (!decision) return
+
+      const result = processAction(room, currentPlayer.id, decision.action, decision.amount || 0)
+      if (!result.error) {
+        broadcastGameState(room.code)
+      }
+    }
+
+    const currentPlayer = game.players[game.currentPlayerIndex]
+    if (currentPlayer && currentPlayer.isBot && !currentPlayer.folded && !currentPlayer.allIn) {
+      setTimeout(doBotTurn, BOT_DELAY)
+    }
+  }
 
   socket.on('start_game', (_, callback) => {
     if (!currentRoomCode) return
@@ -108,7 +295,10 @@ io.on('connection', (socket) => {
     }
 
     if (room.phase === 'game_over') {
-      room.players.forEach(p => { p.chips = 1000 })
+      const config = room.config || DEFAULT_CONFIG
+      room.players.forEach(p => {
+        if (!p.spectator) p.chips = config.startingChips
+      })
       room.game = null
       room.lastHand = null
       room.phase = 'waiting'
@@ -120,12 +310,33 @@ io.on('connection', (socket) => {
     }
 
     startGame(room)
-
-    room.players.forEach(p => {
-      io.to(currentRoomCode).emit('game_state', getPublicGameState(room, p.id))
-    })
-
+    broadcastGameState(currentRoomCode)
     callback({ success: true })
+  })
+
+  socket.on('update_config', ({ config }, callback) => {
+    if (!currentRoomCode) return
+    const room = getRoom(currentRoomCode)
+    if (!room || room.hostId !== currentPlayerId) {
+      callback({ success: false, error: 'Solo el anfitrión puede cambiar la configuración' })
+      return
+    }
+
+    if (room.phase !== 'waiting' && room.phase !== 'game_over') {
+      callback({ success: false, error: 'No se puede cambiar la configuración durante la partida' })
+      return
+    }
+
+    room.config = {
+      startingChips: config.startingChips || DEFAULT_CONFIG.startingChips,
+      smallBlind: config.smallBlind || DEFAULT_CONFIG.smallBlind,
+      bigBlind: config.bigBlind || DEFAULT_CONFIG.bigBlind,
+      blindInterval: config.blindInterval || DEFAULT_CONFIG.blindInterval,
+      blindLevels: config.blindLevels || DEFAULT_CONFIG.blindLevels,
+    }
+
+    io.to(currentRoomCode).emit('config_updated', { config: room.config })
+    callback({ success: true, config: room.config })
   })
 
   socket.on('player_action', ({ action, amount }, callback) => {
@@ -139,32 +350,7 @@ io.on('connection', (socket) => {
       return
     }
 
-    if (room.phase === 'showdown') {
-      room.players.forEach(p => {
-        io.to(currentRoomCode).emit('game_state', getPublicGameState(room, p.id))
-      })
-
-      if (room.phase !== 'game_over') {
-        setTimeout(() => {
-          if (room.phase === 'game_over') return
-          const started = startNewHand(room)
-          if (!started) {
-            room.phase = 'game_over'
-          }
-          room.players.forEach(p => {
-            io.to(currentRoomCode).emit('game_state', getPublicGameState(room, p.id))
-          })
-        }, 6000)
-      }
-    } else if (room.phase === 'game_over') {
-      room.players.forEach(p => {
-        io.to(currentRoomCode).emit('game_state', getPublicGameState(room, p.id))
-      })
-    } else {
-      room.players.forEach(p => {
-        io.to(currentRoomCode).emit('game_state', getPublicGameState(room, p.id))
-      })
-    }
+    broadcastGameState(currentRoomCode)
 
     callback({ success: true })
   })
@@ -185,27 +371,49 @@ io.on('connection', (socket) => {
     if (callback) callback({ success: true })
   })
 
+  socket.on('leave_room', (_, callback) => {
+    if (currentRoomCode && currentPlayerId) {
+      const room = getRoom(currentRoomCode)
+      if (room) {
+        leaveRoom(currentRoomCode, currentPlayerId)
+        playerSockets.delete(currentPlayerId)
+        socket.leave(currentRoomCode)
+
+        if (room.players.length > 0) {
+          io.to(currentRoomCode).emit('room_update', {
+            players: room.players.map(p => ({
+              id: p.id, name: p.name, chips: p.chips, isHost: p.id === room.hostId, spectator: !!p.spectator,
+            })),
+          })
+        }
+        if (callback) callback({ success: true })
+      }
+    }
+  })
+
   socket.on('disconnect', () => {
     if (currentRoomCode && currentPlayerId) {
       const room = getRoom(currentRoomCode)
       if (room) {
-        if (room.game && room.phase === 'playing') {
-          autoFoldPlayer(room, currentPlayerId)
-          room.players.forEach(p => {
-            io.to(currentRoomCode).emit('game_state', getPublicGameState(room, p.id))
-          })
+        const player = room.players.find(p => p.id === currentPlayerId)
+        if (player) {
+          player.disconnected = true
+          if (!player.spectator) {
+            if (room.game && room.phase === 'playing') {
+              autoFoldPlayer(room, currentPlayerId)
+              broadcastGameState(currentRoomCode)
+            }
+          }
         }
 
-        leaveRoom(currentRoomCode, currentPlayerId)
+        playerSockets.delete(currentPlayerId)
 
-        if (room.players.length > 0) {
-          socket.to(currentRoomCode).emit('room_update', {
-            players: room.players.map(p => ({
-              id: p.id, name: p.name, chips: p.chips, isHost: p.id === room.hostId,
-            })),
-          })
-          socket.to(currentRoomCode).emit('player_disconnected', { playerId: currentPlayerId })
-        }
+        socket.to(currentRoomCode).emit('room_update', {
+          players: room.players.map(p => ({
+            id: p.id, name: p.name, chips: p.chips, isHost: p.id === room.hostId, spectator: !!p.spectator,
+          })),
+        })
+        socket.to(currentRoomCode).emit('player_disconnected', { playerId: currentPlayerId })
       }
     }
   })

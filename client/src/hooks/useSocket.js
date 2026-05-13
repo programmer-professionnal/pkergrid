@@ -1,31 +1,44 @@
-import { useEffect, useRef, useCallback, useState } from 'react'
-import { io } from 'socket.io-client'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import { SERVER_URL } from '../config.js'
+import { io } from 'socket.io-client'
 
 export default function useSocket() {
   const socketRef = useRef(null)
-  const callbacksRef = useRef({})
   const [connected, setConnected] = useState(false)
+  const callbacksRef = useRef({})
+  const reconnectAttempted = useRef(false)
+
+  const setCallbacks = useCallback((cbs) => {
+    callbacksRef.current = cbs
+  }, [])
 
   useEffect(() => {
     const socket = io(SERVER_URL, {
       transports: ['websocket', 'polling'],
-      reconnection: true,
-      reconnectionAttempts: Infinity,
-      reconnectionDelay: 1000,
     })
 
     socket.on('connect', () => {
       setConnected(true)
+
+      const saved = sessionStorage.getItem('pkergrid_session')
+      if (saved && !reconnectAttempted.current) {
+        reconnectAttempted.current = true
+        try {
+          const { playerId, roomCode } = JSON.parse(saved)
+          if (playerId && roomCode) {
+            socket.emit('reconnect_player', { playerId, roomCode }, (response) => {
+              if (response && response.success) {
+                callbacksRef.current.onReconnected?.(response)
+              } else {
+                sessionStorage.removeItem('pkergrid_session')
+              }
+            })
+          }
+        } catch {}
+      }
     })
 
-    socket.on('disconnect', () => {
-      setConnected(false)
-    })
-
-    socket.on('connect_error', () => {
-      setConnected(false)
-    })
+    socket.on('disconnect', () => setConnected(false))
 
     socket.on('game_state', (state) => {
       callbacksRef.current.onGameState?.(state)
@@ -43,26 +56,15 @@ export default function useSocket() {
       callbacksRef.current.onPlayerDisconnected?.(data)
     })
 
-    socket.on('ping_server', () => {
-      socket.emit('pong_server')
+    socket.on('config_updated', (data) => {
+      callbacksRef.current.onConfigUpdated?.(data)
     })
-
-    const pingInterval = setInterval(() => {
-      if (socket.connected) {
-        socket.emit('client_ping')
-      }
-    }, 60000)
 
     socketRef.current = socket
 
     return () => {
-      clearInterval(pingInterval)
       socket.disconnect()
     }
-  }, [])
-
-  const setCallbacks = useCallback((callbacks) => {
-    callbacksRef.current = callbacks
   }, [])
 
   const emit = useCallback((event, data, callback) => {
