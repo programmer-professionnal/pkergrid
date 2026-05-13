@@ -70,8 +70,8 @@ export function decideBotAction(bot, game, communityCards, currentBet, minRaise)
 
   const strength = getHandStrengthScore(bot.cards, communityCards)
   const toCall = Math.max(0, currentBet - bot.bet)
-  const pot = game.pot
-  const potOdds = toCall > 0 ? pot / toCall : 999
+  const totalPot = game.pot + game.players.reduce((sum, p) => sum + p.bet, 0)
+  const potOdds = toCall > 0 ? totalPot / toCall : 999
   const maxScore = 9000000
   const strengthPct = strength / maxScore
 

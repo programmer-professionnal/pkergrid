@@ -27,6 +27,7 @@ export default function PokerTable({ room, emit, setCallbacks, connected, onLeav
   const [showTutorial, setShowTutorial] = useState(!sessionStorage.getItem('pkergrid_tutorial_done'))
   const [showConfig, setShowConfig] = useState(false)
   const [isSpectator, setIsSpectator] = useState(false)
+  const [roomConfig, setRoomConfig] = useState(room.config || {})
 
   const [animatedCards, setAnimatedCards] = useState(false)
   const [confirmFold, setConfirmFold] = useState(false)
@@ -37,6 +38,7 @@ export default function PokerTable({ room, emit, setCallbacks, connected, onLeav
 
     setGameState(state)
     if (state.players) setPlayers(state.players)
+    if (state.config) setRoomConfig(state.config)
 
     if (state.currentPlayerId === playerId && state.phase !== 'showdown' && state.phase !== 'waiting' && state.phase !== 'game_over') {
       setTimer(TURN_TIMER)
@@ -96,6 +98,7 @@ export default function PokerTable({ room, emit, setCallbacks, connected, onLeav
 
   const onConfigUpdated = useCallback(({ config }) => {
     setLastAction({ type: 'info', text: 'Configuración actualizada' })
+    if (config) setRoomConfig(config)
   }, [])
 
   const onPlayerDisconnected = useCallback(() => {}, [])
@@ -554,7 +557,7 @@ export default function PokerTable({ room, emit, setCallbacks, connected, onLeav
 
       {showConfig && (
         <RoomConfig
-          config={gameState?.config || {}}
+          config={roomConfig}
           onSave={handleSaveConfig}
           onClose={() => setShowConfig(false)}
         />
