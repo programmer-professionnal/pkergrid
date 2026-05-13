@@ -552,9 +552,9 @@ export default function PokerTable({ room, emit, setCallbacks, connected, onLeav
 
       {showTutorial && <Tutorial onClose={() => { setShowTutorial(false); sessionStorage.setItem('pkergrid_tutorial_done', '1') }} />}
 
-      {showConfig && gameState?.config && (
+      {showConfig && (
         <RoomConfig
-          config={gameState.config}
+          config={gameState?.config || {}}
           onSave={handleSaveConfig}
           onClose={() => setShowConfig(false)}
         />
