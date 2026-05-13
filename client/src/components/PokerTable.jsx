@@ -27,15 +27,15 @@ export default function PokerTable({ room, emit, setCallbacks, connected, onLeav
   const [showTutorial, setShowTutorial] = useState(!sessionStorage.getItem('pkergrid_tutorial_done'))
   const [showConfig, setShowConfig] = useState(false)
   const [isSpectator, setIsSpectator] = useState(false)
-  const [lastActionText, setLastActionText] = useState(null)
+
   const [animatedCards, setAnimatedCards] = useState(false)
   const [confirmFold, setConfirmFold] = useState(false)
 
   const onGameState = useCallback((state) => {
     const prev = prevPhaseRef.current
     prevPhaseRef.current = state.phase
-    prevPotsRef.current = gameState?.pots
-    prevCommunityRef.current = gameState?.communityCards
+    prevPotsRef.current = state?.pots
+    prevCommunityRef.current = state?.communityCards
 
     setGameState(state)
     if (state.players) setPlayers(state.players)
@@ -47,10 +47,7 @@ export default function PokerTable({ room, emit, setCallbacks, connected, onLeav
         setTimer(prev => {
           if (prev <= 1) {
             clearInterval(timerRef.current)
-            emit('player_action', { action: 'fold' }, (r) => {
-              if (r && r.error) setLastAction({ type: 'error', text: r.error })
-            })
-            Sound.playFold()
+            performAction('fold')
             return 0
           }
           if (prev <= 6 && prev > 1) Sound.playTimerWarning()
@@ -86,7 +83,7 @@ export default function PokerTable({ room, emit, setCallbacks, connected, onLeav
       }
     }
 
-  }, [playerId, emit, gameState])
+  }, [playerId, emit])
 
   const onRoomUpdate = useCallback((data) => {
     if (data.players) setPlayers(data.players)
@@ -116,6 +113,12 @@ export default function PokerTable({ room, emit, setCallbacks, connected, onLeav
       if (timerRef.current) clearInterval(timerRef.current)
     }
   }, [])
+
+  useEffect(() => {
+    if (!lastAction) return
+    const id = setTimeout(() => setLastAction(null), 3000)
+    return () => clearTimeout(id)
+  }, [lastAction])
 
   const roomPhase = gameState?.phase || 'waiting'
   const me = gameState
@@ -162,7 +165,6 @@ export default function PokerTable({ room, emit, setCallbacks, connected, onLeav
   function performAction(action, amount) {
     setConfirmFold(false)
     setLastAction(null)
-    setLastActionText(null)
 
     switch (action) {
       case 'fold': Sound.playFold(); break
@@ -244,11 +246,10 @@ export default function PokerTable({ room, emit, setCallbacks, connected, onLeav
     window.open(`https://t.me/share/url?url=https://pkergrid.onrender.com&text=${text}`, '_blank')
   }
 
-  if (timer !== null && timer <= 5) {
-    document.documentElement.style.setProperty('--timer-urgent', '#e74c3c')
-  } else {
-    document.documentElement.style.setProperty('--timer-urgent', '#2ecc71')
-  }
+  useEffect(() => {
+    const color = timer !== null && timer <= 5 ? '#e74c3c' : '#2ecc71'
+    document.documentElement.style.setProperty('--timer-urgent', color)
+  }, [timer])
 
   const isMyTurn = gameState?.currentPlayerId === playerId && roomPhase !== 'showdown' && roomPhase !== 'waiting' && roomPhase !== 'game_over'
 
@@ -541,9 +542,6 @@ export default function PokerTable({ room, emit, setCallbacks, connected, onLeav
           </div>
         )}
 
-        {lastActionText && (
-          <div className="table-action-text">{lastActionText}</div>
-        )}
       </div>
 
       <HandHistory
