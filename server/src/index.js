@@ -286,32 +286,42 @@ io.on('connection', (socket) => {
   }
 
   socket.on('start_game', (_, callback) => {
-    if (!currentRoomCode) return
-    const room = getRoom(currentRoomCode)
-    if (!room) return
-    if (room.hostId !== currentPlayerId) {
-      callback({ success: false, error: 'Solo el anfitrión puede iniciar' })
-      return
-    }
+    try {
+      if (!currentRoomCode) return
+      const room = getRoom(currentRoomCode)
+      if (!room) return
+      if (room.hostId !== currentPlayerId) {
+        callback({ success: false, error: 'Solo el anfitrión puede iniciar' })
+        return
+      }
 
-    if (room.phase === 'game_over') {
-      const config = room.config || DEFAULT_CONFIG
-      room.players.forEach(p => {
-        if (!p.spectator) p.chips = config.startingChips
-      })
-      room.game = null
-      room.lastHand = null
-      room.phase = 'waiting'
-    }
+      if (room.phase === 'game_over') {
+        const config = room.config || DEFAULT_CONFIG
+        room.players.forEach(p => {
+          if (!p.spectator) p.chips = config.startingChips
+        })
+        room.game = null
+        room.lastHand = null
+        room.phase = 'waiting'
+      }
 
-    if (!canStartGame(room)) {
-      callback({ success: false, error: 'Se necesitan al menos 2 jugadores' })
-      return
-    }
+      if (!canStartGame(room)) {
+        callback({ success: false, error: 'Se necesitan al menos 2 jugadores' })
+        return
+      }
 
-    startGame(room)
-    broadcastGameState(currentRoomCode)
-    callback({ success: true })
+      const result = startGame(room)
+      if (!result) {
+        callback({ success: false, error: 'Error al iniciar la partida' })
+        return
+      }
+
+      broadcastGameState(currentRoomCode)
+      callback({ success: true })
+    } catch (err) {
+      console.error('Error en start_game:', err)
+      callback({ success: false, error: 'Error interno del servidor' })
+    }
   })
 
   socket.on('update_config', ({ config }, callback) => {

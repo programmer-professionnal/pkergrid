@@ -28,7 +28,16 @@ export function startGame(room) {
   const players = room.players.filter(p => p.chips > 0 && !p.spectator && !p.disconnected)
   if (players.length < MIN_PLAYERS) return false
 
-  const blinds = getBlinds(config, room.game?.handCount || 0)
+  const safeBlindInterval = Math.max(1, config.blindInterval || DEFAULT_CONFIG.blindInterval)
+  const safeBlindLevels = Array.isArray(config.blindLevels) && config.blindLevels.length > 0
+    ? config.blindLevels
+    : DEFAULT_CONFIG.blindLevels
+  const safeConfig = { ...config, blindInterval: safeBlindInterval, blindLevels: safeBlindLevels }
+
+  let blinds = getBlinds(safeConfig, room.game?.handCount || 0)
+  if (!blinds || typeof blinds.small !== 'number' || typeof blinds.big !== 'number') {
+    blinds = { small: DEFAULT_CONFIG.smallBlind, big: DEFAULT_CONFIG.bigBlind }
+  }
 
   const nextDealer = room.game
     ? (room.game.dealerIndex + 1) % players.length
@@ -61,8 +70,10 @@ export function startGame(room) {
 
   players.forEach(p => p.reset())
 
-  postBlind(players[smallBlindIndex], blinds.small)
-  postBlind(players[bigBlindIndex], blinds.big)
+  if (players[smallBlindIndex] && players[bigBlindIndex]) {
+    postBlind(players[smallBlindIndex], blinds.small)
+    postBlind(players[bigBlindIndex], blinds.big)
+  }
 
   game.currentBet = blinds.big
   game.currentPlayerIndex = (bigBlindIndex + 1) % players.length
